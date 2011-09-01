@@ -32,7 +32,7 @@ public class ReflectionUtilsTest {
     }
     
     @Test
-    public void findClassSearchesForACLassByFullyQualifiedName() {
+    public void findClassSearchesForAClassByFullyQualifiedName() {
         String thisPkg = this.getClass().getPackage().getName();
         Class<?> cls = ReflectionUtils.findClass(thisPkg + ".ReflectionUtilsTest");
         assertEquals(ReflectionUtilsTest.class, cls);
@@ -65,7 +65,7 @@ public class ReflectionUtilsTest {
     }
 
     @Test(expected=AssertionError.class)
-    public void requireMethodFailsWhenTheMethidCannotBeFound() {
+    public void requireMethodFailsWhenTheMethodCannotBeFound() {
         assertNotNull(ReflectionUtils.requireMethod(TestSubject.class, "foo"));
         assertNotNull(ReflectionUtils.requireMethod(TestSubject.class, "setX", Long.TYPE));
     }
