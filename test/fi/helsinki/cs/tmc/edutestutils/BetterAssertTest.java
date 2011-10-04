@@ -65,6 +65,7 @@ public class BetterAssertTest {
         assertContainsNumber(20.2, "!!+20,20!!");
         assertContainsNumber(-20.2, "!!-20,20!!");
         
+        assertContainsNumber(1, "abc1.00000001def");
     }
     
     @Test
