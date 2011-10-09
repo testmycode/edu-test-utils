@@ -3,7 +3,7 @@ package fi.helsinki.cs.tmc.edutestutils;
 import org.junit.Test;
 import static fi.helsinki.cs.tmc.edutestutils.EduAssert.*;
 
-public class BetterAssertTest {
+public class EduAssertTest {
     
     @Test
     public void testAssertMatches_FullMatchIsOk() {
