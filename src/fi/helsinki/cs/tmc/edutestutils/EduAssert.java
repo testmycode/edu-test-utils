@@ -87,8 +87,8 @@ public class EduAssert extends Assert {
      * <p>
      * {@link #tolerantNumberPattern} defines what substrings are considered numbers.
      * 
-     * @param number
-     * @param actual
+     * @param number The expected number.
+     * @param actual The string that should contain the number.
      * @return Whether the string contains a match for {@link #tolerantNumberPattern} that is close enough to {@code number}.
      */
     public static boolean containsNumber(double number, String actual) {
@@ -102,5 +102,54 @@ public class EduAssert extends Assert {
             }
         }
         return false;
+    }
+    
+    /**
+     * Asserts two strings equal ignoring consecutive whitespace.
+     * 
+     * <p>
+     * Precisely, this method compares the strings after applying
+     * {@link #collapseWhitespace(java.lang.String)} to both.
+     */
+    public static void assertEqualsIgnoreSpaces(String message, String expected, String actual) {
+        expected = collapseWhitespace(expected);
+        actual = collapseWhitespace(actual);
+        assertEquals(message, expected, actual);
+    }
+    
+    /**
+     * Asserts two strings equal ignoring consecutive whitespace.
+     * 
+     * <p>
+     * Precisely, this method compares the strings after applying
+     * {@link #collapseWhitespace(java.lang.String)} to both.
+     */
+    public static void assertEqualsIgnoreSpaces(String expected, String actual) {
+        expected = collapseWhitespace(expected);
+        actual = collapseWhitespace(actual);
+        assertEquals(expected, actual);
+    }
+
+    /**
+     * Collapses consecutive spaces and tabs into one space and removes extra "\r" characters.
+     * 
+     * <p>
+     * The string is first trimmed of spaces and newlines in its beginning and end.
+     * Then all carriage return characters ("\r") are stripped, which converts
+     * newlines to Unix format. Finally all spaces and tabs are compressed into one
+     * and spaces around newlines are removed.
+     */
+    public static String collapseWhitespace(String s) {
+        // Trim away whitespace and newlines that don't matter
+        s = s.trim();
+        // Get rid of Windows newlines.
+        s = s.replace("\r", "");
+        // Collapse spaces and tabs into one
+        s = s.replaceAll("[ \\t]+", " ");
+        // Collapse spaces around newlines
+        s = s.replace(" \n", "\n");
+        s = s.replace("\n ", "\n");
+        
+        return s;
     }
 }

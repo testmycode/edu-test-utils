@@ -82,4 +82,40 @@ public class EduAssertTest {
             fail();
         }
     }
+    
+    @Test
+    public void testAssertEqualsIgnoreSpaces_PositiveCases() {
+        assertEqualsIgnoreSpaces("one  two  three", "one two three");
+        assertEqualsIgnoreSpaces("one two three", "one two three");
+        assertEqualsIgnoreSpaces("one two three", "   one        two    three  ");
+        assertEqualsIgnoreSpaces("one two three", "   one  \t \t   two\tthree  ");
+        assertEqualsIgnoreSpaces("one\ntwo three", "one   \n  two\t\tthree ");
+        assertEqualsIgnoreSpaces("one\n\ntwo\nthree", "one  \n \n  two\nthree ");
+    }
+    
+    @Test
+    public void testAssertEqualsIgnoreSpaces_TrimmedNewlines() {
+        assertEqualsIgnoreSpaces("\none two three", "one two three");
+        assertEqualsIgnoreSpaces("one two three", "\none two three");
+        assertEqualsIgnoreSpaces("\none two three\n", "one two three");
+        assertEqualsIgnoreSpaces("one two three", "one two three\n");
+    }
+    
+    @Test
+    public void testAssertEqualsIgnoreSpaces_NegativeCases() {
+        assertNotEqualsIgnoreSpaces("one  two  three", "onetwo three");
+        assertNotEqualsIgnoreSpaces("one two  three", "one two\nthree");
+        assertNotEqualsIgnoreSpaces("one \n two  three", "one two\nthree");
+        assertNotEqualsIgnoreSpaces("one \n two  three", "one \n\n two three");
+        assertNotEqualsIgnoreSpaces("one \n two  three", "one \n \n two three");
+    }
+    
+    private void assertNotEqualsIgnoreSpaces(String expected, String actual) {
+        try {
+            assertEqualsIgnoreSpaces(expected, actual);
+        } catch (AssertionError e) {
+            return;
+        }
+        fail();
+    }
 }
