@@ -1,5 +1,9 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -27,7 +31,7 @@ public class ReflectionUtils {
      * <p>
      * Uses the system class loader.
      * 
-     * @param name The fully qualified name of the class
+     * @param name The fully qualified name of the class.
      * @return The class object. Never null.
      * @throws AssertionError If the class could not be found.
      */
@@ -36,9 +40,106 @@ public class ReflectionUtils {
             throw new IllegalArgumentException("Test writer: use '.' as the package separator instead of '/'.");
         }
         
-        ClassLoader cl = ClassLoader.getSystemClassLoader();
+        return loadClassWith(name, ClassLoader.getSystemClassLoader());
+    }
+    
+    /**
+     * Loads a new instance of the class in a new class loader.
+     * 
+     * <p>
+     * First of all, consider this method error-prone and avoid it if possible.
+     * 
+     * <p>
+     * The intended use case is to allow rerunning static initializers
+     * in student code. The reloaded class returned by this method is
+     * <b>uninitialized</b>, i.e. its static initializers have not been run
+     * (JVM spec 2nd ed. <a href="http://java.sun.com/docs/books/jvms/second_edition/html/Concepts.doc.html#19075">§2.17.4</a>).
+     * To run static initializers, call a method on the reloaded class or
+     * read the value of a non-final static field.
+     * 
+     * <p>
+     * The following shows how to reinitialize a class
+     * <tt>Main</tt> and rerun its <tt>main</tt> method.
+     * 
+     * <pre>
+     * {@code
+     * Class<?> reloadedMain = ReflectionUtils.reloadClass(Main.class.getName());
+     * Method mainMethod = requireMethod(reloadedMain, "main", String[].class);
+     * invokeMethod(void.class, mainMethod, new String[0]); // statics are reinitialized here
+     * }
+     * </pre>
+     * 
+     * <p>
+     * The new instance of the class is loaded by a fresh class loader.
+     * This means that it is <b>incompatible</b> with any previously loaded
+     * instance of the class and should only be accessed reflectively.
+     * That is, the following example will throw a {@link ClassCastException}.
+     * 
+     * <pre>
+     * {@code
+     * Object reloadedThing = ReflectionUtils.reloadClass("Thing").newInstance();
+     * Thing thing = (Thing)reloadedThing;
+     * }
+     * </pre>
+     * 
+     * <p>
+     * Indeed a class in Java is uniquely identified by its name <b>and</b>
+     * the classloader that loaded it. See
+     * <a href="http://tutorials.jenkov.com/java-reflection/dynamic-class-loading-reloading.html">here</a> for more information.
+     * 
+     * @param className The fully qualified name of the class to reload.
+     * @return A new instance of the class.
+     * @throws RuntimeException If an error occurs while reading the class file.
+     * @throws AssertionError If the class could not be found.
+     */
+    public static Class<?> reloadClass(final String className) {
+        ClassLoader loader = new ClassLoader() {
+            
+            @Override
+            public Class<?> loadClass(String name) throws ClassNotFoundException {
+                return loadClass(name, false);
+            }
+            
+            @Override
+            protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                if (!name.equals(className)) {
+                    return super.loadClass(name, resolve);
+                }
+                
+                InputStream classIn = getClass().getClassLoader().getResourceAsStream(name.replace('.', '/') + ".class");
+                if (classIn == null) {
+                    throw new ClassNotFoundException(name);
+                }
+                classIn = new BufferedInputStream(classIn);
+                
+                try {
+                    ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+                    int data = classIn.read();
+                    while (data != -1) {
+                        buf.write(data);
+                        data = classIn.read();
+                    }
+                    
+                    byte[] classDef = buf.toByteArray();
+                    return defineClass(name, classDef, 0, classDef.length);
+                } catch (IOException e) {
+                    throw new RuntimeException("Error reloading class " + name, e);
+                } finally {
+                    try {
+                        classIn.close();
+                    } catch (IOException e) {
+                    }
+                }
+            }
+        };
+        
+        return loadClassWith(className, loader);
+    }
+    
+    private static Class<?> loadClassWith(String name, ClassLoader loader) {
         try {
-            return cl.loadClass(name);
+            return loader.loadClass(name);
         } catch (ClassNotFoundException ex) {
             if (name.contains(".")) {
                 throw new AssertionError("Could not find class `" + name + "`. Is it in the correct package?");
@@ -51,6 +152,7 @@ public class ReflectionUtils {
     /**
      * Finds a constructor with the specified argument list.
      * 
+     * @param <T> The type whose constructor to look for.
      * @param cls The class whose constructor to look for.
      * @param paramTypes The expected types of the parameters.
      * @return The constructor reflection object. Never null.
@@ -67,10 +169,10 @@ public class ReflectionUtils {
     }
     
     /**
-     * Finds a method with the specified argument list.
+     * Finds a public method with the specified argument list.
      * 
      * <p>
-     * While this does not assert anything about the return type, but
+     * This does not assert anything about the return type, but
      * {@link #invokeMethod(Class, Method, Object, Object[])}
      * does.
      * 
@@ -168,7 +270,7 @@ public class ReflectionUtils {
      * @param <T> The expected return type.
      * @param retType The expected return type. Pass {@code Void.TYPE} for void.
      * @param method The method to invoke.
-     * @param self The this parameter for the method.
+     * @param self The <tt>this</tt> parameter for the method. Use null for static methods.
      * @param params The parameters to pass.
      * @return The return value.
      * @throws AssertionError If the method could not be called with the given parameters.
