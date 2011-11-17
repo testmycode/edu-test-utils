@@ -28,4 +28,12 @@ public class MockStdioTest {
         io.setSysIn("hello");
         assertEquals("hello", new Scanner(System.in).nextLine());
     }
+    
+    @Test
+    public void convertsWindowsLineEndingsToUnix() {
+        System.out.println("hello\r\nworld");
+        System.err.println("world\r\nhello");
+        assertEquals("hello\nworld\n", io.getSysOut());
+        assertEquals("world\nhello\n", io.getSysErr());
+    }
 }

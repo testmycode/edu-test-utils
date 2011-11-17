@@ -31,6 +31,9 @@ import org.junit.runners.model.Statement;
  * }
  * </code>
  * 
+ * <p>This class automatically converts line endings in stdout and stderr to
+ * unix format (only <tt>\n</tt>) for your convenience.
+ * 
  * <p>
  * NOTE: It's common for student code to have a {@link Scanner} object with
  * a reference to {@link System#in} in a <b>static</b> variable.
@@ -56,7 +59,6 @@ public class MockStdio implements TestRule {
                 return -1;
             }
         }
-        
     }
     
     private Charset charset = Charset.defaultCharset();
@@ -113,7 +115,7 @@ public class MockStdio implements TestRule {
      */
     public String getSysOut() {
         try {
-            return outBuf.toString(charset.name());
+            return outBuf.toString(charset.name()).replace("\r\n", "\n");
         } catch (UnsupportedEncodingException ex) {
             throw new RuntimeException(ex);
         }
@@ -124,7 +126,7 @@ public class MockStdio implements TestRule {
      */
     public String getSysErr() {
         try {
-            return errBuf.toString(charset.name());
+            return errBuf.toString(charset.name()).replace("\r\n", "\n");
         } catch (UnsupportedEncodingException ex) {
             throw new RuntimeException(ex);
         }
