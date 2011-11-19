@@ -1,11 +1,11 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
-import fi.helsinki.cs.tmc.edutestutils.ReflectionUtilsReloadClassTest.MainTestSubject;
+import fi.helsinki.cs.tmc.edutestutils.ReflectionUtilsNewClassInstanceTest.MainTestSubject;
 import java.lang.reflect.Method;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class ReflectionUtilsReloadClassTest {
+public class ReflectionUtilsNewClassInstanceTest {
     public static int timesLoaded = 0;
     public static class TestSubject {
         static {
@@ -42,13 +42,13 @@ public class ReflectionUtilsReloadClassTest {
         String className = TestSubject.class.getName();
         timesLoaded = 0;
         
-        Class<?> cls1 = ReflectionUtils.reloadClass(className);
+        Class<?> cls1 = ReflectionUtils.newInstanceOfClass(className);
         assertEquals(0, timesLoaded); // Not yet initialized
         cls1.getMethod("doNothing").invoke(null); // Initializes the class
         assertEquals(1, timesLoaded);
         assertNotSame(TestSubject.class, cls1);
         
-        Class<?> cls2 = ReflectionUtils.reloadClass(className);
+        Class<?> cls2 = ReflectionUtils.newInstanceOfClass(className);
         assertEquals(1, timesLoaded);
         cls2.newInstance(); // Initializes the class
         assertEquals(2, timesLoaded);
@@ -61,7 +61,7 @@ public class ReflectionUtilsReloadClassTest {
     
     @Test
     public void canRerunMainMethodAsInExample() throws Throwable {
-        Class<?> reloadedMain = ReflectionUtils.reloadClass(MainTestSubject.class.getName());
+        Class<?> reloadedMain = ReflectionUtils.newInstanceOfClass(MainTestSubject.class.getName());
         assertFalse(mainInitsHaveRun);
         Method mainMethod = ReflectionUtils.requireMethod(reloadedMain, "main", String[].class);
         assertFalse(mainInitsHaveRun);
@@ -76,7 +76,7 @@ public class ReflectionUtilsReloadClassTest {
         new Dependee();
         assertEquals(1, dependeeInitCount);
         
-        Class<?> depender = ReflectionUtils.reloadClass(Depender.class.getName());
+        Class<?> depender = ReflectionUtils.newInstanceOfClass(Depender.class.getName());
         depender.newInstance();
         Dependee dep = (Dependee)depender.getField("dep").get(null);
         assertEquals(1, dependeeInitCount);
@@ -84,6 +84,6 @@ public class ReflectionUtilsReloadClassTest {
     
     @Test(expected=AssertionError.class)
     public void throwsAnAssertionErrorIfTheClassCannotBeFound() throws Throwable {
-        ReflectionUtils.reloadClass("Nonexistent");
+        ReflectionUtils.newInstanceOfClass("Nonexistent");
     }
 }

@@ -51,19 +51,20 @@ public class ReflectionUtils {
      * 
      * <p>
      * The intended use case is to allow rerunning static initializers
-     * in student code. The reloaded class returned by this method is
+     * in student code. The new class instance returned by this method is
      * <b>uninitialized</b>, i.e. its static initializers have not been run
      * (JVM spec 2nd ed. <a href="http://java.sun.com/docs/books/jvms/second_edition/html/Concepts.doc.html#19075">§2.17.4</a>).
-     * To run static initializers, call a method on the reloaded class or
+     * To run static initializers, call a method on the new class instance or
      * read the value of a non-final static field.
      * 
      * <p>
-     * The following shows how to reinitialize a class
-     * <tt>Main</tt> and rerun its <tt>main</tt> method.
+     * The following shows how to load a new instance of a class
+     * <tt>Main</tt> and reinitialize it as a side effect of calling
+     * its <tt>main</tt> method.
      * 
      * <pre>
      * {@code
-     * Class<?> reloadedMain = ReflectionUtils.reloadClass(Main.class.getName());
+     * Class<?> reloadedMain = ReflectionUtils.newInstanceOfClass(Main.class.getName());
      * Method mainMethod = requireMethod(reloadedMain, "main", String[].class);
      * invokeMethod(void.class, mainMethod, new String[0]); // statics are reinitialized here
      * }
@@ -73,11 +74,11 @@ public class ReflectionUtils {
      * The new instance of the class is loaded by a fresh class loader.
      * This means that it is <b>incompatible</b> with any previously loaded
      * instance of the class and should only be accessed reflectively.
-     * That is, the following example will throw a {@link ClassCastException}.
+     * That is, the following example will throw a {@link ClassCastException}!
      * 
      * <pre>
      * {@code
-     * Object reloadedThing = ReflectionUtils.reloadClass("Thing").newInstance();
+     * Object reloadedThing = ReflectionUtils.newInstanceOfClass("Thing").newInstance();
      * Thing thing = (Thing)reloadedThing;
      * }
      * </pre>
@@ -92,7 +93,7 @@ public class ReflectionUtils {
      * @throws RuntimeException If an error occurs while reading the class file.
      * @throws AssertionError If the class could not be found.
      */
-    public static Class<?> reloadClass(final String className) {
+    public static Class<?> newInstanceOfClass(final String className) {
         ClassLoader loader = new ClassLoader() {
             
             @Override
@@ -135,6 +136,18 @@ public class ReflectionUtils {
         };
         
         return loadClassWith(className, loader);
+    }
+    
+    /**
+     * Loads a new instance of the class in a new class loader.
+     * 
+     * Please see {@link #newInstanceOfClass(java.lang.String)}.
+     * 
+     * @param cls
+     * @return 
+     */
+    public static Class<?> newInstanceOfClass(Class<?> cls) {
+        return newInstanceOfClass(cls.getName());
     }
     
     private static Class<?> loadClassWith(String name, ClassLoader loader) {
