@@ -42,7 +42,7 @@ import org.junit.runners.model.Statement;
  * before this rule gets a chance to change {@link System#in},
  * then the scanner will read from the actual input stream.
  * It may be necessary to use
- * {@link ReflectionUtils#reloadClass(java.lang.String)} to get a new instance
+ * {@link ReflectionUtils#newInstanceOfClass(java.lang.String)} to get a new instance
  * of the student code in order to make it point to the changed {@link System#in}.
  */
 public class MockStdio implements TestRule {
