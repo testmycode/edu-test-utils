@@ -24,10 +24,10 @@ import org.junit.runners.model.Statement;
  * import org.junit.Rule;<br>
  * <br>
  * public class MyTest {<br>
- * &nbsp;&nbsp;&#64;Rule<br>
- * &nbsp;&nbsp;public MockStdio io = new MockStdio();<br>
- * &nbsp;&nbsp;<br>
- * &nbsp;&nbsp;// ...<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;&#64;Rule<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;public MockStdio io = new MockStdio();<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;// ...<br>
  * }
  * </code>
  * 

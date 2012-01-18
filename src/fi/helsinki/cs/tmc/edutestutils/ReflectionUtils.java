@@ -142,9 +142,6 @@ public class ReflectionUtils {
      * Loads a new instance of the class in a new class loader.
      * 
      * Please see {@link #newInstanceOfClass(java.lang.String)}.
-     * 
-     * @param cls
-     * @return 
      */
     public static Class<?> newInstanceOfClass(Class<?> cls) {
         return newInstanceOfClass(cls.getName());
