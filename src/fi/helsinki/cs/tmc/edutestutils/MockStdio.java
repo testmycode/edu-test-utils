@@ -1,8 +1,11 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
+import fi.helsinki.cs.tmc.edutestutils.utils.SwitchableInputStream;
+import fi.helsinki.cs.tmc.edutestutils.utils.SwitchableOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -32,82 +35,100 @@ import org.junit.runners.model.Statement;
  * </code>
  * 
  * <p>This class automatically converts line endings in stdout and stderr to
- * unix format (only <tt>\n</tt>) for your convenience.
+ * unix format (only <tt>\n</tt>).
+ * 
+ * <h2>Important notes about initialization order</h2>
  * 
  * <p>
- * NOTE: It's common for student code to have a {@link Scanner} object with
+ * It's common for student code to have a {@link Scanner} object with
  * a reference to {@link System#in} in a <b>static</b> variable.
  * If the static variable is
  * <a href="http://java.sun.com/docs/books/jvms/second_edition/html/Concepts.doc.html#19075">initialized</a>
  * before this rule gets a chance to change {@link System#in},
- * then the scanner will read from the actual input stream.
- * It may be necessary to use
- * {@link ReflectionUtils#newInstanceOfClass(java.lang.String)} to get a new instance
- * of the student code in order to make it point to the changed {@link System#in}.
+ * then the scanner will read from the original input stream
+ * instead of the mock.
+ * 
+ * <p>
+ * If MockStdio used by <b>all</b> test classes
+ * (critically, by the first test class to be run), then this is not a problem,
+ * since MockStdio gets a chance to (permanently) replace {@link System#in}
+ * before any student classes get initialized. If MockStdio is not used in all
+ * test classes (i.e. it's possible a test class without MockStdio gets run
+ * before one that has MockStdio) then it may be necessary to use
+ * {@link ReflectionUtils#newInstanceOfClass(java.lang.String)}
+ * to get a new instance of the student code in order to make it point to
+ * the changed {@link System#in}.
  */
 public class MockStdio implements TestRule {
+
+    private static boolean initialized = false;
     
-    private static class MockInputStream extends InputStream {
-        public int pos = 0;
-        public byte[] source = new byte[0];
-        
-        @Override
-        public int read() throws IOException {
-            if (pos < source.length) {
-                return source[pos++];
-            } else {
-                return -1;
-            }
-        }
-    }
+    private static final Charset charset = Charset.defaultCharset();
     
-    private Charset charset = Charset.defaultCharset();
+    private static final InputStream realIn = System.in;
+    private static final OutputStream realOut = System.out;
+    private static final OutputStream realErr = System.err;
     
-    private InputStream origIn;
-    private PrintStream origOut;
-    private PrintStream origErr;
+    private static final SwitchableInputStream switchIn = new SwitchableInputStream(realIn);
+    private static final SwitchableOutputStream switchOut = new SwitchableOutputStream(realOut);
+    private static final SwitchableOutputStream switchErr = new SwitchableOutputStream(realErr);
     
-    private MockInputStream mockIn;
-    private ByteArrayOutputStream outBuf;
-    private ByteArrayOutputStream errBuf;
+    private InputStream mockIn;
+    private ByteArrayOutputStream mockOut;
+    private ByteArrayOutputStream mockErr;
+    private boolean enabled;
     
     @Override
-    public Statement apply(final Statement stmt, Description d) {
+    public Statement apply(final Statement stmnt, Description d) {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                origIn = System.in;
-                origOut = System.out;
-                origErr = System.err;
+                if (!initialized) {
+                    initialize();
+                }
                 
-                mockIn = new MockInputStream();
-                outBuf = new ByteArrayOutputStream();
-                errBuf = new ByteArrayOutputStream();
-                
-                System.setIn(mockIn);
-                System.setOut(new PrintStream(outBuf, true, charset.name()));
-                System.setErr(new PrintStream(errBuf, true, charset.name()));
-                
-                stmt.evaluate();
-                
-                mockIn = null;
-                outBuf = null;
-                errBuf = null;
-                
-                System.setIn(origIn);
-                System.setOut(origOut);
-                System.setErr(origErr);
+                try {
+                    if (!enabled) {
+                        enable();
+                    }
+                    stmnt.evaluate();
+                } finally {
+                    if (enabled) {
+                        disable();
+                    }
+                }
             }
         };
     }
     
+    private void initialize() throws Exception {
+        resetMockIn();
+        resetMockOutAndErr();
+        
+        System.setIn(switchIn);
+        System.setOut(new PrintStream(switchOut, true, charset.name()));
+        System.setErr(new PrintStream(switchErr, true, charset.name()));
+        
+        initialized = true;
+    }
+    
+    private void resetMockIn() {
+        mockIn = new ByteArrayInputStream(new byte[0]);
+    }
+    
+    private void resetMockOutAndErr() {
+        mockOut = new ByteArrayOutputStream();
+        mockErr = new ByteArrayOutputStream();
+    }
+    
     /**
-     * Sets the what {@link System#in} receives during this test.
-     * @param str 
+     * Sets what {@link System#in} receives during this test.
      */
     public void setSysIn(String str) {
-        mockIn.source = str.getBytes(charset);
-        mockIn.pos = 0;
+        mockIn = new ByteArrayInputStream(str.getBytes(charset));
+        if (enabled) {
+            switchIn.setUnderlying(mockIn);
+        }
     }
     
     /**
@@ -115,7 +136,7 @@ public class MockStdio implements TestRule {
      */
     public String getSysOut() {
         try {
-            return outBuf.toString(charset.name()).replace("\r\n", "\n");
+            return mockOut.toString(charset.name()).replace("\r\n", "\n");
         } catch (UnsupportedEncodingException ex) {
             throw new RuntimeException(ex);
         }
@@ -126,9 +147,54 @@ public class MockStdio implements TestRule {
      */
     public String getSysErr() {
         try {
-            return errBuf.toString(charset.name()).replace("\r\n", "\n");
+            return mockErr.toString(charset.name()).replace("\r\n", "\n");
         } catch (UnsupportedEncodingException ex) {
             throw new RuntimeException(ex);
         }
     }
+    
+    /**
+     * Redirects I/O to/from buffers.
+     * 
+     * <p>
+     * If your use StaticMockStdio as a JUnit rule, there is no need to call
+     * this directly.
+     */
+    public void enable() {
+        resetMockOutAndErr();
+        
+        switchIn.setUnderlying(mockIn);
+        switchOut.setUnderlying(mockOut);
+        switchErr.setUnderlying(mockErr);
+        
+        enabled = true;
+    }
+    
+    /**
+     * Tells whether I/O is directed to/from the mock buffers.
+     * 
+     * <p>
+     * Should be true in all tests with this JUnit rule.
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+    
+    /**
+     * Redirects I/O to/from the original streams.
+     * 
+     * <p>
+     * If your use StaticMockStdio as a JUnit rule, there is no need to call
+     * this directly.
+     */
+    public void disable() {
+        enabled = false;
+        
+        switchIn.setUnderlying(realIn);
+        switchOut.setUnderlying(realOut);
+        switchErr.setUnderlying(realErr);
+        
+        resetMockIn();
+    }
+    
 }
