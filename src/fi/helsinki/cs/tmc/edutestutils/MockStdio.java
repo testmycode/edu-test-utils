@@ -58,6 +58,13 @@ import org.junit.runners.model.Statement;
  * {@link ReflectionUtils#newInstanceOfClass(java.lang.String)}
  * to get a new instance of the student code in order to make it point to
  * the changed {@link System#in}.
+ * 
+ * <p>
+ * MockStdio has been known to cause problems on some JVMs
+ * when used with PowerMock. The simpler {@link MockInOut} may be helpful in
+ * those cases.
+ * 
+ * @see MockInOut
  */
 public class MockStdio implements TestRule {
 
@@ -83,10 +90,6 @@ public class MockStdio implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                if (!initialized) {
-                    initialize();
-                }
-                
                 try {
                     if (!enabled) {
                         enable();
@@ -101,13 +104,13 @@ public class MockStdio implements TestRule {
         };
     }
     
-    private void initialize() throws Exception {
+    private void initialize() {
         resetMockIn();
         resetMockOutAndErr();
         
         System.setIn(switchIn);
-        System.setOut(new PrintStream(switchOut, true, charset.name()));
-        System.setErr(new PrintStream(switchErr, true, charset.name()));
+        System.setOut(new PrintStream(switchOut, true));
+        System.setErr(new PrintStream(switchErr, true));
         
         initialized = true;
     }
@@ -161,6 +164,10 @@ public class MockStdio implements TestRule {
      * this directly.
      */
     public void enable() {
+        if (!initialized) {
+            initialize();
+        }
+        
         resetMockOutAndErr();
         
         switchIn.setUnderlying(mockIn);
