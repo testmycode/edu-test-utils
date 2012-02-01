@@ -13,13 +13,13 @@ import java.io.ByteArrayInputStream;
  * Usage:</p>
  *
  * <code>
- * public void myTest() {
- * &nbsp;&nbsp;&nbsp;&nbsp;MockInOut mio = new MockInOut("input goes here");
- * &nbsp;&nbsp;&nbsp;&nbsp;// Call some code
- * &nbsp;&nbsp;&nbsp;&nbsp;String out = mio.getOutput();
- * &nbsp;&nbsp;&nbsp;&nbsp;mio.close();
- * &nbsp;&nbsp;&nbsp;&nbsp;// Check that the output is correct
- * }
+ * public void myTest() {<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;MockInOut mio = new MockInOut("input goes here");<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;// Call some code<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;String out = mio.getOutput();<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;mio.close();<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;// Check that the output is correct<br>
+ * }<br>
  * </code>
  */
 public class MockInOut {
