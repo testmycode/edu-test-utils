@@ -1,7 +1,6 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
 import java.util.Scanner;
-import org.junit.Rule;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import java.util.NoSuchElementException;
@@ -15,9 +14,9 @@ public class MockInOutTest {
         assertFalse(System.out==out);
         assertFalse(System.in==in);
         System.out.println("hello");
-        System.out.println("moi");
+        System.out.println("moi\r\nmoi");
         
-        assertEquals("hello\nmoi\n",mio.getOutput());
+        assertEquals("hello\nmoi\nmoi\n",mio.getOutput());
 
         Scanner s = new Scanner(System.in);
 

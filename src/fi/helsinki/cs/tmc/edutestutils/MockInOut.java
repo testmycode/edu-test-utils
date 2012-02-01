@@ -1,7 +1,6 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
@@ -15,12 +14,19 @@ import java.io.ByteArrayInputStream;
  * <code>
  * public void myTest() {<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;MockInOut mio = new MockInOut("input goes here");<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;// Call some code<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;String out = mio.getOutput();<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;mio.close();<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;try {<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// Call some code<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;String out = mio.getOutput();<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;} finally {<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mio.close();<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;}<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;// Check that the output is correct<br>
  * }<br>
  * </code>
+ * 
+ * This class automatically converts line endings in stdout to unix format (only \n).
+ * 
+ * @see MockStdio
  */
 public class MockInOut {
 
@@ -43,13 +49,13 @@ public class MockInOut {
     /** You can use this if you want to check how much of the input was read. */
     public ByteArrayInputStream getInputStream() {
         return is;
-    }        
+    }
 
     /** Returns everything written to System.out since this {@code MockInOut}
      * was constructed. Can't be called on a closed {@code MockInOut} */
     public String getOutput() {
         if (os != null)
-            return os.toString();
+            return os.toString().replace("\r\n", "\n");
         else
             throw new Error("getOutput on closed MockInOut!");
     }
