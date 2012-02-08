@@ -8,6 +8,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /**
  * Helpers for testing a student's class entirely through reflection
@@ -25,6 +28,30 @@ import java.lang.reflect.Modifier;
  */
 public class ReflectionUtils {
 
+    private static Locale msgLocale;
+    private static ResourceBundle msgBundle;
+    
+    static {
+        setMsgLocale(null);
+    }
+    
+    /**
+     * Sets the locale to use when looking up assertion error messages.
+     * 
+     * @param newLocale The new locale, or null to reset to the default locale.
+     */
+    public static void setMsgLocale(Locale newLocale) {
+        if (newLocale == null) {
+            newLocale = Locale.getDefault();
+        }
+        msgLocale = newLocale;
+        msgBundle = ResourceBundle.getBundle(ReflectionUtils.class.getCanonicalName(), msgLocale);
+    }
+    
+    private static String tr(String key, Object... args) {
+        return new MessageFormat(msgBundle.getString(key), msgLocale).format(args);
+    }
+    
     /**
      * Finds a class.
      * 
@@ -152,9 +179,9 @@ public class ReflectionUtils {
             return loader.loadClass(name);
         } catch (ClassNotFoundException ex) {
             if (name.contains(".")) {
-                throw new AssertionError("Could not find class `" + name + "`. Is it in the correct package?");
+                throw new AssertionError(tr("class_not_found_pkg", name));
             } else {
-                throw new AssertionError("Could not find class `" + name + "`.");
+                throw new AssertionError(tr("class_not_found", name));
             }
         }
     }
@@ -172,9 +199,9 @@ public class ReflectionUtils {
         try {
             return cls.getConstructor(paramTypes);
         } catch (NoSuchMethodException ex) {
-            throw new AssertionError("The constructor " + niceMethodSignature(cls.getSimpleName(), paramTypes) + " is missing.");
+            throw new AssertionError(tr("ctor_missing", niceMethodSignature(cls.getSimpleName(), paramTypes)));
         } catch (SecurityException ex) {
-            throw new AssertionError("The constructor " + niceMethodSignature(cls.getSimpleName(), paramTypes) + " could not be accessed. Is it public?");
+            throw new AssertionError(tr("ctor_inaccessible", niceMethodSignature(cls.getSimpleName(), paramTypes)));
         }
     }
     
@@ -200,9 +227,9 @@ public class ReflectionUtils {
             }
             return m;
         } catch (NoSuchMethodException ex) {
-            throw new AssertionError("Method " + niceMethodSignature(name, params) + " missing.");
+            throw new AssertionError(tr("method_missing", niceMethodSignature(name, params)));
         } catch (SecurityException ex) {
-            throw new AssertionError("The method " + niceMethodSignature(name, params) + " could not be accessed. Is it public?");
+            throw new AssertionError(tr("method_inaccessible", niceMethodSignature(name, params)));
         }
     }
 
@@ -256,11 +283,11 @@ public class ReflectionUtils {
         try {
             return ctor.newInstance(params);
         } catch (IllegalAccessException ex) {
-            throw new AssertionError("The constructor " + ctor.toGenericString() + " could not be accessed.");
+            throw new AssertionError(tr("ctor_inaccessible", ctor.toGenericString()));
         } catch (IllegalArgumentException ex) {
-            throw new AssertionError("The constructor " + ctor.toGenericString() + " has an incorrect number of parameters.");
+            throw new AssertionError(tr("ctor_incorrect_params", ctor.toGenericString()));
         } catch (InstantiationException ex) {
-            throw new AssertionError("Cannot create an instance of " + ctor.getDeclaringClass().getSimpleName() + ".");
+            throw new AssertionError(tr("ctor_abstract", ctor.getDeclaringClass().getSimpleName()));
         } catch (ExceptionInInitializerError ex) {
             throw ex.getCause();
         } catch (InvocationTargetException ex) {
@@ -292,18 +319,18 @@ public class ReflectionUtils {
             Object ret = method.invoke(self, params);
             if (retType == Void.TYPE) {
                 if (ret != null) {
-                    throw new AssertionError("The method " + niceMethodSignature(method) + " should not return anything.");
+                    throw new AssertionError(tr("method_should_be_void", niceMethodSignature(method)));
                 }
                 return null;
             } else if (primitiveTypeToObjectType(retType).isInstance(ret)) {
                 return (T) ret;
             } else {
-                throw new AssertionError("The method " + niceMethodSignature(method) + " has an incorrect return type.");
+                throw new AssertionError(tr("method_wrong_return_type", niceMethodSignature(method)));
             }
         } catch (IllegalAccessException ex) {
-            throw new AssertionError("The method " + niceMethodSignature(method) + " could not be accessed.");
+            throw new AssertionError(tr("method_inaccessible", niceMethodSignature(method)));
         } catch (IllegalArgumentException ex) {
-            throw new AssertionError("The method " + niceMethodSignature(method) + " has an incorrect number of parameters.");
+            throw new AssertionError(tr("method_incorrect_params", niceMethodSignature(method)));
         } catch (InvocationTargetException ex) {
             throw ex.getCause();
         }

@@ -2,6 +2,8 @@ package fi.helsinki.cs.tmc.edutestutils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Locale;
+import org.junit.After;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -29,6 +31,11 @@ public class ReflectionUtilsTest {
         public void throwISE() {
             throw new IllegalStateException();
         }
+    }
+    
+    @After
+    public void resetLocale() {
+        ReflectionUtils.setMsgLocale(null);
     }
     
     @Test
@@ -98,6 +105,21 @@ public class ReflectionUtilsTest {
         Object obj = ReflectionUtils.invokeConstructor(ctor);
         Method m = ReflectionUtils.requireMethod(TestSubject.class, "throwISE");
         ReflectionUtils.invokeMethod(Void.TYPE, m, obj);
+    }
+    
+    @Test
+    public void localizedErrorMessages() throws Throwable {
+        ReflectionUtils.setMsgLocale(new Locale("fi"));
+        
+        AssertionError ex = null;
+        try {
+            ReflectionUtils.findClass("Nonexistent");
+        } catch (AssertionError e) {
+            ex = e;
+        }
+        
+        assertNotNull(ex);
+        assertEquals("Luokkaa `Nonexistent` ei löytynyt.", ex.getMessage());
     }
     
 }
