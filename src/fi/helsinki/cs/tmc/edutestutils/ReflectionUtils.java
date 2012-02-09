@@ -25,6 +25,8 @@ import java.util.ResourceBundle;
  * NOTE: a common mistake is to forget the difference between {@code Integer.class} and
  * {@code Integer.TYPE}. The former refers to the object type {@code Integer} and the latter
  * to the primitive type {@code int}.
+ * 
+ * @see Reflex
  */
 public class ReflectionUtils {
 
