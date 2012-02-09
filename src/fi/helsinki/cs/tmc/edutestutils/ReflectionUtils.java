@@ -210,8 +210,10 @@ public class ReflectionUtils {
      * 
      * <p>
      * This does not assert anything about the return type, but
+     * {@link #requireMethod(java.lang.Class, java.lang.Class, java.lang.String, java.lang.Class[])}
+     * and
      * {@link #invokeMethod(Class, Method, Object, Object[])}
-     * does.
+     * do.
      * 
      * @param cls The class whose method to look for.
      * @param name The name of the method.
@@ -231,6 +233,46 @@ public class ReflectionUtils {
         } catch (SecurityException ex) {
             throw new AssertionError(tr("method_inaccessible", niceMethodSignature(name, params)));
         }
+    }
+    
+    /**
+     * Finds a public method with the specified return type and argument list.
+     * 
+     * @param cls The class whose method to look for.
+     * @param returnType The expected return type.
+     * @param name The name of the method.
+     * @param params The expected types of the parameters.
+     * @return The method reflection object. Never null.
+     * @throws AssertionError If the method could not be found.
+     */
+    public static Method requireMethod(Class<?> cls, Class<?> returnType, String name, Class<?>... params) {
+        Method m = requireMethod(cls, name, params);
+        if (!m.getReturnType().equals(returnType)) {
+            throw new AssertionError(tr("method_wrong_return_type", niceMethodSignature(returnType, name, params)));
+        }
+        return m;
+    }
+    
+    /**
+     * Finds a public method with the specified staticness, return type and argument list.
+     * 
+     * @param expectStatic Whether the method must be static or non-static.
+     * @param cls The class whose method to look for.
+     * @param returnType The expected return type.
+     * @param name The name of the method.
+     * @param params The expected types of the parameters.
+     * @return The method reflection object. Never null.
+     * @throws AssertionError If the method could not be found.
+     */
+    public static Method requireMethod(boolean expectStatic, Class<?> cls, Class<?> returnType, String name, Class<?>... params) {
+        Method m = requireMethod(cls, returnType, name, params);
+        boolean isStatic = ((m.getModifiers() & Modifier.STATIC) != 0);
+        if (isStatic && !expectStatic) {
+            throw new AssertionError(tr("method_should_not_be_static", niceMethodSignature(returnType, name, params)));
+        } else if (!isStatic && expectStatic) {
+            throw new AssertionError(tr("method_should_be_static", niceMethodSignature(returnType, name, params)));
+        }
+        return m;
     }
 
     /**
@@ -252,6 +294,27 @@ public class ReflectionUtils {
      */
     public static String niceMethodSignature(String methodName, Class<?>... paramTypes) {
         String result = methodName;
+        result += "(";
+        if (paramTypes.length > 0) {
+            for (int i = 0; i < paramTypes.length - 1; ++i) {
+                result += paramTypes[i].getSimpleName() + ", ";
+            }
+            result += paramTypes[paramTypes.length - 1].getSimpleName();
+        }
+        result += ")";
+        return result;
+    }
+    
+    /**
+     * Returns a human-friendly representation of a method signature.
+     * 
+     * @param returnType The return type of the method.
+     * @param methodName The name of the method.
+     * @param paramTypes The method's parameter types.
+     * @return A human-readable name and parameter list of the method.
+     */
+    public static String niceMethodSignature(Class<?> returnType, String methodName, Class<?>... paramTypes) {
+        String result = returnType.getSimpleName() + " " + methodName;
         result += "(";
         if (paramTypes.length > 0) {
             for (int i = 0; i < paramTypes.length - 1; ++i) {

@@ -31,6 +31,9 @@ public class ReflectionUtilsTest {
         public void throwISE() {
             throw new IllegalStateException();
         }
+        public static int staticMethod(int a, int b) {
+            return a + b;
+        }
     }
     
     @After
@@ -40,8 +43,7 @@ public class ReflectionUtilsTest {
     
     @Test
     public void findClassSearchesForAClassByFullyQualifiedName() {
-        String thisPkg = this.getClass().getPackage().getName();
-        Class<?> cls = ReflectionUtils.findClass(thisPkg + ".ReflectionUtilsTest");
+        Class<?> cls = ReflectionUtils.findClass(ReflectionUtilsTest.class.getCanonicalName());
         assertEquals(ReflectionUtilsTest.class, cls);
     }
     
@@ -62,7 +64,7 @@ public class ReflectionUtilsTest {
 
     @Test(expected=AssertionError.class)
     public void requireConstructorFailsWhenTheConstructorCannotBeFound() {
-        assertNotNull(ReflectionUtils.requireConstructor(TestSubject.class, Integer.class));
+        ReflectionUtils.requireConstructor(TestSubject.class, Integer.class);
     }
     
     @Test
@@ -73,8 +75,27 @@ public class ReflectionUtilsTest {
 
     @Test(expected=AssertionError.class)
     public void requireMethodFailsWhenTheMethodCannotBeFound() {
-        assertNotNull(ReflectionUtils.requireMethod(TestSubject.class, "foo"));
-        assertNotNull(ReflectionUtils.requireMethod(TestSubject.class, "setX", Long.TYPE));
+        ReflectionUtils.requireMethod(TestSubject.class, "foo");
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void requireMethodFailsWhenTheMethodHasTheWrongTypesOfParameters() {
+        ReflectionUtils.requireMethod(TestSubject.class, "setX", Long.TYPE);
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void requireMethodFailsWhenTheMethodsReturnTypeDoesntMatch() {
+        ReflectionUtils.requireMethod(TestSubject.class, String.class, "getX");
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void requireMethodFailsWhenNotStaticWhenShouldBe() {
+        ReflectionUtils.requireMethod(true, TestSubject.class, String.class, "getX");
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void requireMethodFailsWhenStaticWhenShouldNotBe() {
+        ReflectionUtils.requireMethod(false, TestSubject.class, String.class, "staticMethod");
     }
     
     @Test
@@ -96,7 +117,7 @@ public class ReflectionUtilsTest {
     @Test(expected=IllegalStateException.class)
     public void constructorInvokationPassesThroughErrors() throws Throwable {
         Constructor<?> ctor = ReflectionUtils.requireConstructor(TestSubject.class, String.class);
-        Object obj = ReflectionUtils.invokeConstructor(ctor, "xoo");
+        ReflectionUtils.invokeConstructor(ctor, "xoo");
     }
     
     @Test(expected=IllegalStateException.class)
