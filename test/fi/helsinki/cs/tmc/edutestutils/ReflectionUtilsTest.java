@@ -34,6 +34,9 @@ public class ReflectionUtilsTest {
         public static int staticMethod(int a, int b) {
             return a + b;
         }
+        public Object returnsNull() {
+            return null;
+        }
     }
     
     @After
@@ -128,6 +131,14 @@ public class ReflectionUtilsTest {
         ReflectionUtils.invokeMethod(Void.TYPE, m, obj);
     }
     
+    @Test
+    public void returningNullWorks() throws Throwable {
+        Constructor<?> ctor = ReflectionUtils.requireConstructor(TestSubject.class);
+        Object obj = ReflectionUtils.invokeConstructor(ctor);
+        Method m = ReflectionUtils.requireMethod(TestSubject.class, "returnsNull");
+        assertNull(ReflectionUtils.invokeMethod(Object.class, m, obj));
+    }
+
     @Test
     public void localizedErrorMessages() throws Throwable {
         ReflectionUtils.setMsgLocale(new Locale("fi"));

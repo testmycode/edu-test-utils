@@ -387,7 +387,7 @@ public class ReflectionUtils {
                     throw new AssertionError(tr("method_should_be_void", niceMethodSignature(method)));
                 }
                 return null;
-            } else if (primitiveTypeToObjectType(retType).isInstance(ret)) {
+            } else if (ret == null || primitiveTypeToObjectType(retType).isInstance(ret)) {
                 return (T) ret;
             } else {
                 throw new AssertionError(tr("method_wrong_return_type", niceMethodSignature(method)));
