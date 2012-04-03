@@ -90,7 +90,7 @@ public class Reflex {
      */
     public static <S> ClassRef<S> reflect(Class<S> cls) {
         if (cls == null) throw new NullPointerException("Class cannot be null");
-        return new ClassRef(cls);
+        return new ClassRef<S>(cls);
     }
     
     /**
@@ -100,7 +100,7 @@ public class Reflex {
      * See examples in the class docs. 
      */
     public static ClassRef<Object> reflect(String className) {
-        return new ClassRef(ReflectionUtils.findClass(className));
+        return new ClassRef<Object>(ReflectionUtils.findClass(className));
     }
     
     
@@ -110,13 +110,13 @@ public class Reflex {
      * Refers to a reflected class.
      */
     public static class ClassRef<S> {
-        private final Class<S> cls;
+        private final Class<? extends S> cls;
         
-        ClassRef(Class<S> cls) {
+        ClassRef(Class<? extends S> cls) {
             this.cls = cls;
         }
         
-        public Class<S> getReferencedClass() {
+        public Class<? extends S> getReferencedClass() {
             return cls;
         }
         
@@ -129,14 +129,14 @@ public class Reflex {
          * Shorthand for {@link #constructor()}.
          */
         public MethodAndReturnType<S, S> ctor() {
-            return new MethodAndReturnType(cls, null, MethodType.CONSTRUCTOR, null, cls);
+            return new MethodAndReturnType<S, S>(cls, null, MethodType.CONSTRUCTOR, null, cls);
         }
         
         /**
          * Selects constructors and continues with {@code .taking(...)}.
          */
         public MethodAndReturnType<S, S> constructor() {
-            return new MethodAndReturnType(cls, null, MethodType.CONSTRUCTOR, null, cls);
+            return new MethodAndReturnType<S, S>(cls, null, MethodType.CONSTRUCTOR, null, cls);
         }
         
         /**
@@ -155,14 +155,14 @@ public class Reflex {
          */
         public MethodName<S> method(S self, String name) {
             if (name == null) throw new NullPointerException("Method name cannot be null");
-            return new MethodName(cls, self, MethodType.METHOD, name);
+            return new MethodName<S>(cls, self, MethodType.METHOD, name);
         }
         
         /**
          * Selects static methods and continues with {@code .returning(...)}.
          */
         public MethodName<S> staticMethod(String name) {
-            return new MethodName(cls, null, MethodType.STATIC_METHOD, name);
+            return new MethodName<S>(cls, null, MethodType.STATIC_METHOD, name);
         }
     }
     
@@ -172,12 +172,12 @@ public class Reflex {
      * @param <S> The class containing the method.
      */
     public static class MethodName<S> {
-        private final Class<S> cls;
+        private final Class<? extends S> cls;
         private final S self;
         private final MethodType methodType;
         private final String name;
 
-        MethodName(Class<S> cls, S self, MethodType methodType, String name) {
+        MethodName(Class<? extends S> cls, S self, MethodType methodType, String name) {
             this.cls = cls;
             this.self = self;
             this.name = name;
@@ -187,8 +187,8 @@ public class Reflex {
         /**
          * Specifies a return type and continues with {@code taking(...)}.
          */
-        public <R> MethodAndReturnType<S, R> returning(Class<R> returnType) {
-            return new MethodAndReturnType(cls, self, methodType, name, returnType);
+        public <R> MethodAndReturnType<S, R> returning(Class<? extends R> returnType) {
+            return new MethodAndReturnType<S, R>(cls, self, methodType, name, returnType);
         }
         
         /**
@@ -206,13 +206,13 @@ public class Reflex {
      * @param <R> The expected return type.
      */
     public static class MethodAndReturnType<S, R> {
-        final Class<S> cls;
-        final S self;
-        final MethodType methodType;
-        final String name;
-        final Class<R> returnType;
+        private final Class<? extends S> cls;
+        private final S self;
+        private final MethodType methodType;
+        private final String name;
+        private final Class<? extends R> returnType;
 
-        MethodAndReturnType(Class<S> cls, S self, MethodType methodType, String name, Class<R> returnType) {
+        MethodAndReturnType(Class<? extends S> cls, S self, MethodType methodType, String name, Class<? extends R> returnType) {
             this.cls = cls;
             this.self = self;
             this.methodType = methodType;
@@ -231,35 +231,35 @@ public class Reflex {
          * Specifies 1 expected parameter.
          */
         public <P1> MethodRef1<S, R, P1> taking(Class<P1> p1) {
-            return new MethodRef1(this, p1);
+            return new MethodRef1<S, R, P1>(this, p1);
         }
         
         /**
          * Specifies 2 expected parameters.
          */
         public <P1, P2> MethodRef2<S, R, P1, P2> taking(Class<P1> p1, Class<P2> p2) {
-            return new MethodRef2(this, p1, p2);
+            return new MethodRef2<S, R, P1, P2>(this, p1, p2);
         }
         
         /**
          * Specifies 3 expected parameters.
          */
         public <P1, P2, P3> MethodRef3<S, R, P1, P2, P3> taking(Class<P1> p1, Class<P2> p2, Class<P3> p3) {
-            return new MethodRef3(this, p1, p2, p3);
+            return new MethodRef3<S, R, P1, P2, P3>(this, p1, p2, p3);
         }
         
         /**
          * Specifies 4 expected parameters.
          */
         public <P1, P2, P3, P4> MethodRef4<S, R, P1, P2, P3, P4> taking(Class<P1> p1, Class<P2> p2, Class<P3> p3, Class<P4> p4) {
-            return new MethodRef4(this, p1, p2, p3, p4);
+            return new MethodRef4<S, R, P1, P2, P3, P4>(this, p1, p2, p3, p4);
         }
         
         /**
          * Specifies 5 expected parameters.
          */
         public <P1, P2, P3, P4, P5> MethodRef5<S, R, P1, P2, P3, P4, P5> taking(Class<P1> p1, Class<P2> p2, Class<P3> p3, Class<P4> p4, Class<P5> p5) {
-            return new MethodRef5(this, p1, p2, p3, p4, p5);
+            return new MethodRef5<S, R, P1, P2, P3, P4, P5>(this, p1, p2, p3, p4, p5);
         }
     }
     
@@ -332,7 +332,7 @@ public class Reflex {
         /**
          * Finds and returns the underlying {@code java.lang.reflect.Constructor} or throws an exception.
          */
-        public Constructor<S> getConstructor()
+        public Constructor<? extends S> getConstructor()
         {
             switch (method.methodType) {
                 case CONSTRUCTOR:
@@ -349,6 +349,7 @@ public class Reflex {
             return ReflectionUtils.niceMethodSignature(method.returnType, method.name, paramTypes);
         }
         
+        @SuppressWarnings("unchecked")
         protected R invokeImpl(Object... params) throws Throwable {
             switch (method.methodType) {
                 case CONSTRUCTOR: return (R)invokeCtor(params);
@@ -358,6 +359,7 @@ public class Reflex {
             }
         }
         
+        @SuppressWarnings("unchecked")
         protected R invokeOnImpl(Object self, Object... params) throws Throwable {
             switch (method.methodType) {
                 case METHOD: return (R)invokeMethodOn(self, params);
@@ -366,7 +368,7 @@ public class Reflex {
         }
         
         private Object invokeCtor(Object... params) throws Throwable {
-            Constructor<S> ctor = getConstructor();
+            Constructor<? extends S> ctor = getConstructor();
             return ReflectionUtils.invokeConstructor(ctor, params);
         }
         
