@@ -17,7 +17,7 @@ import java.lang.reflect.Method;
  * 
  * // Now find some specific methods and call those.
  * thingCls.method(thing, "setFoo").returningVoid().taking(int.class).invoke(5);
- * int result = thingCls.method(thing, "getFoo").returning(int.class).takingNoParams().invoke(7);
+ * int result = thingCls.method(thing, "getFoo").returning(int.class).takingNoParams().invoke();
  * }
  * </pre>
  * 
