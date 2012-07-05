@@ -13,7 +13,10 @@ public class ReflexTest {
     public static class EmptyClass {
     }
     
-    public static class TestSubject {
+    public static class Superclass {
+    }
+    
+    public static class TestSubject extends Superclass {
         private int x;
         public TestSubject() {
         }
@@ -221,6 +224,15 @@ public class ReflexTest {
     public void constructorSignature() throws Throwable {
         ClassRef<TestSubject> testSubject = Reflex.reflect(TestSubject.class);
         assertEquals("TestSubject(int)", testSubject.constructor().taking(int.class).signature());
+    }
+    
+    @Test
+    public void inheritsCheck() throws Throwable {
+        ClassRef<TestSubject> ts = Reflex.reflect(TestSubject.class);
+        ClassRef<Superclass> sc = Reflex.reflect(Superclass.class);
+        assertTrue(ts.inherits(ts));
+        assertTrue(ts.inherits(sc));
+        assertFalse(sc.inherits(ts));
     }
     
     @Test

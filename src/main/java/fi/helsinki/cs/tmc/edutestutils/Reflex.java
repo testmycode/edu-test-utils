@@ -121,7 +121,19 @@ public class Reflex {
             return cls;
         }
         
-        // TODO: versions of constructor/method/staticMethod parsing a method signature
+        /**
+         * Tells whether the referenced class extends or implements the given class or interface.
+         */
+        public boolean inherits(Class<?> superClassOrInterface) {
+            return superClassOrInterface.isAssignableFrom(this.cls);
+        }
+        
+        /**
+         * Tells whether the referenced class extends or implements the given class or interface.
+         */
+        public boolean inherits(ClassRef<?> superClassOrInterfaceRef) {
+            return superClassOrInterfaceRef.getReferencedClass().isAssignableFrom(this.cls);
+        }
         
         /**
          * Selects constructors and continues with {@code .taking(...)}.
