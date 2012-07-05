@@ -162,6 +162,20 @@ public class ReflexTest {
     }
     
     @Test
+    public void methodSignature() throws Throwable {
+        ClassRef<TestSubject> testSubject = Reflex.reflect(TestSubject.class);
+        assertEquals("int getX()", testSubject.method("getX").returning(int.class).takingNoParams().signature());
+        assertEquals("void setX(int)", testSubject.method("setX").returning(void.class).taking(int.class).signature());
+        assertEquals("static int staticMethod(int, int)", testSubject.staticMethod("staticMethod").returning(int.class).taking(int.class, int.class).signature());
+    }
+    
+    @Test
+    public void constructorSignature() throws Throwable {
+        ClassRef<TestSubject> testSubject = Reflex.reflect(TestSubject.class);
+        assertEquals("TestSubject(int)", testSubject.constructor().taking(int.class).signature());
+    }
+    
+    @Test
     public void localizedErrorMessages() throws Throwable {
         ReflectionUtils.setMsgLocale(new Locale("fi"));
         

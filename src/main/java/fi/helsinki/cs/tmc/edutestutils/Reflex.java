@@ -346,7 +346,12 @@ public class Reflex {
          * Returns a human-readable signature of the method.
          */
         public String signature() {
-            return ReflectionUtils.niceMethodSignature(method.returnType, method.name, paramTypes);
+            switch (method.methodType) {
+                case CONSTRUCTOR: return ReflectionUtils.niceMethodSignature(method.cls.getSimpleName(), paramTypes);
+                case METHOD: return ReflectionUtils.niceMethodSignature(method.returnType, method.name, paramTypes);
+                case STATIC_METHOD: return "static " + ReflectionUtils.niceMethodSignature(method.returnType, method.name, paramTypes);
+                default: throw new IllegalStateException("Implementation error in Reflex.");
+            }
         }
         
         @SuppressWarnings("unchecked")
