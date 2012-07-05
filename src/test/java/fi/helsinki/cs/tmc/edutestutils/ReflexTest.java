@@ -53,6 +53,8 @@ public class ReflexTest {
         int packagePrivateMethod() {
             return 42;
         }
+        public void takeSelf(TestSubject ts) {
+        }
     }
     
     @After
@@ -233,6 +235,19 @@ public class ReflexTest {
         assertTrue(ts.inherits(ts));
         assertTrue(ts.inherits(sc));
         assertFalse(sc.inherits(ts));
+    }
+    
+    @Test
+    public void typeParameterToRepresentDynamicallyLoadedClassPattern() throws Throwable {
+        class TestCase<T> {
+            public void run() throws Throwable {
+                ClassRef<T> cr = Reflex.reflect(ReflexTest.class.getCanonicalName() + "$TestSubject");
+                T obj = cr.constructor().takingNoParams().invoke();
+                MethodRef1<T, Void, T> mr = cr.method(obj, "takeSelf").returningVoid().taking(cr.getReferencedClass());
+                mr.invoke(obj);
+            }
+        }
+        new TestCase().run();
     }
     
     @Test

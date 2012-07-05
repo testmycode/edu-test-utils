@@ -44,7 +44,8 @@ import java.lang.reflect.Modifier;
  * 
  * <p>
  * Reflex also works on classes loaded at runtime.
- * Just use {@code Object} in place of the type in type parameters.
+ * There are two ways to assign type parameters in this case.
+ * One way is to just use {@code Object} in place of the type in type parameters.
  * <pre>
  * {@code
  * ClassRef<Object> thingCls = Reflex.reflect("Thing"); // Load class `Thing` at runtime
@@ -60,8 +61,25 @@ import java.lang.reflect.Modifier;
  * </pre>
  * 
  * <p>
+ * Perhaps a nicer alternative is to add a type parameter to your test class and use that to represent the loaded class.
+ * <pre>
+ * {@code
+ * public class MyTest<_Thing> {
+ *     ...
+ *     ClassRef<_Thing> thingCls = Reflex.reflext("Thing");
+ *     ...
+ * }
+ * }
+ * </pre>
+ * 
+ * <p>
+ * Just remeber that in the above, {@code _Thing} is not the same class as {@code Thing}
+ * since they're loaded by different class loaders.
+ * 
+ * <p>
  * Note that obtaining a MethodRef will always succeed even if the method doesn't exist.
- * You should use {@code exists()} or {@code requireExists()}.
+ * The method's existence is of course checked when it's invoked, but you can also
+ * check it explicitly.
  * <pre>
  * {@code
  * MethodRef0<Thing, Void> m = Reflex.reflect(Thing.class).method("foo").returningVoid().takingNoParams();
@@ -70,8 +88,13 @@ import java.lang.reflect.Modifier;
  * }
  * // Or alternatively
  * m.requireExists();
+ * // Or, to require it exists and is public
+ * m.requirePublic();
  * }
  * </pre>
+ * 
+ * <p>
+ * Reflex will allow you to invoke non-public methods. It will not check that a method is public by default.
  * 
  * <p>
  * Reflex uses {@link ReflectionUtils} internally and gains its localized error
@@ -100,8 +123,8 @@ public class Reflex {
      * <p>
      * See examples in the class docs. 
      */
-    public static ClassRef<Object> reflect(String className) {
-        return new ClassRef<Object>(ReflectionUtils.findClass(className));
+    public static <T> ClassRef<T> reflect(String className) {
+        return new ClassRef<T>((Class<T>)ReflectionUtils.findClass(className));
     }
     
     
@@ -111,13 +134,27 @@ public class Reflex {
      * Refers to a reflected class.
      */
     public static class ClassRef<S> {
-        private final Class<? extends S> cls;
+        private final Class<S> cls;
         
-        ClassRef(Class<? extends S> cls) {
+        ClassRef(Class<S> cls) {
             this.cls = cls;
         }
         
-        public Class<? extends S> getReferencedClass() {
+        /**
+         * Returns the referenced class object.
+         */
+        public Class<S> getReferencedClass() {
+            return cls;
+        }
+        
+        
+        /**
+         * Returns the referenced class object.
+         * 
+         * <p>
+         * An alias for {@link #getReferencedClass()}.
+         */
+        public Class<S> cls() {
             return cls;
         }
         
