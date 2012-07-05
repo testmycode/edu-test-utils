@@ -33,6 +33,13 @@ public class ReflectionUtils {
     private static Locale msgLocale;
     private static ResourceBundle msgBundle;
     
+    public static final int PUBLIC = Modifier.PUBLIC;
+    public static final int PROTECTED = Modifier.PROTECTED;
+    public static final int PRIVATE = Modifier.PRIVATE;
+    public static final int PACKAGE_PRIVATE = 0xF0000000;
+    private static final int[] ALL_ACCESS_MODIFIERS = { PUBLIC, PROTECTED, PRIVATE, PACKAGE_PRIVATE };
+    private static final String[] ALL_ACCESS_MODIFIERS_STR = { "public", "protected", "private", "package_private" };
+    
     static {
         setMsgLocale(null);
     }
@@ -216,14 +223,39 @@ public class ReflectionUtils {
     }
     
     /**
+     * Finds a constructor with the specified access modifier and argument list.
+     * 
+     * @param <T> The type whose constructor to look for.
+     * @param expectedAccess One or more (OR-ed) of PUBLIC, PROTECTED, PRIVATE or PACKAGE_PRIVATE to allow, or null to not check.
+     * @param cls The class whose constructor to look for.
+     * @param paramTypes The expected types of the parameters.
+     * @return The constructor reflection object. Never null.
+     * @throws AssertionError If the constructor could not be found.
+     */
+    public static <T> Constructor<T> requireConstructor(Integer expectedAccess, Class<T> cls, Class<?> ... paramTypes) {
+        Constructor<T> ctor;
+        try {
+            ctor = cls.getDeclaredConstructor(paramTypes);
+            ctor.setAccessible(true);
+        } catch (NoSuchMethodException ex) {
+            throw new AssertionError(tr("ctor_missing", niceMethodSignature(cls.getSimpleName(), paramTypes)));
+        } catch (SecurityException ex) {
+            throw new AssertionError(tr("ctor_inaccessible", niceMethodSignature(cls.getSimpleName(), paramTypes)));
+        }
+        
+        if (!isExpectedAccess(expectedAccess, ctor.getModifiers())) {
+            throw new AssertionError(tr("ctor_wrong_access", niceConstructorSignature(ctor), setOfAccessModsToString(expectedAccess)));
+        }
+        
+        return ctor;
+    }
+    
+    /**
      * Finds a public method with the specified argument list.
      * 
      * <p>
-     * This does not assert anything about the return type, but
-     * {@link #requireMethod(java.lang.Class, java.lang.Class, java.lang.String, java.lang.Class[])}
-     * and
-     * {@link #invokeMethod(Class, Method, Object, Object[])}
-     * do.
+     * This does not assert anything about the method's staticness or return type.
+     * Other variants of this method do.
      * 
      * @param cls The class whose method to look for.
      * @param name The name of the method.
@@ -232,57 +264,138 @@ public class ReflectionUtils {
      * @throws AssertionError If the method could not be found.
      */
     public static Method requireMethod(Class<?> cls, String name, Class<?>... params) {
-        try {
-            Method m = cls.getMethod(name, params);
-            if ((m.getModifiers() & Modifier.PUBLIC) == 0) {
-                throw new SecurityException();
-            }
-            return m;
-        } catch (NoSuchMethodException ex) {
-            throw new AssertionError(tr("method_missing", niceMethodSignature(name, params), cls));
-        } catch (SecurityException ex) {
-            throw new AssertionError(tr("method_inaccessible", niceMethodSignature(name, params), cls));
-        }
+        return requireMethod(PUBLIC, null, cls, null, name, params);
     }
     
     /**
      * Finds a public method with the specified return type and argument list.
      * 
      * @param cls The class whose method to look for.
-     * @param returnType The expected return type.
+     * @param returnType The expected return type, or null to not check.
      * @param name The name of the method.
      * @param params The expected types of the parameters.
      * @return The method reflection object. Never null.
      * @throws AssertionError If the method could not be found.
      */
     public static Method requireMethod(Class<?> cls, Class<?> returnType, String name, Class<?>... params) {
-        Method m = requireMethod(cls, name, params);
-        if (!m.getReturnType().equals(returnType)) {
-            throw new AssertionError(tr("method_wrong_return_type", niceMethodSignature(returnType, name, params), cls));
-        }
-        return m;
+        return requireMethod(PUBLIC, null, cls, returnType, name, params);
     }
     
     /**
      * Finds a public method with the specified staticness, return type and argument list.
      * 
-     * @param expectStatic Whether the method must be static or non-static.
+     * @param expectStatic Whether the method must be static or non-static, or null to not check.
      * @param cls The class whose method to look for.
-     * @param returnType The expected return type.
+     * @param returnType The expected return type, or null to not check.
      * @param name The name of the method.
      * @param params The expected types of the parameters.
      * @return The method reflection object. Never null.
      * @throws AssertionError If the method could not be found.
      */
-    public static Method requireMethod(boolean expectStatic, Class<?> cls, Class<?> returnType, String name, Class<?>... params) {
-        Method m = requireMethod(cls, returnType, name, params);
-        boolean isStatic = ((m.getModifiers() & Modifier.STATIC) != 0);
-        if (isStatic && !expectStatic) {
-            throw new AssertionError(tr("method_should_not_be_static", niceMethodSignature(returnType, name, params), cls));
-        } else if (!isStatic && expectStatic) {
-            throw new AssertionError(tr("method_should_be_static", niceMethodSignature(returnType, name, params), cls));
+    public static Method requireMethod(Boolean expectStatic, Class<?> cls, Class<?> returnType, String name, Class<?>... params) {
+        return requireMethod(PUBLIC, expectStatic, cls, returnType, name, params);
+    }
+    
+    /**
+     * Finds a method with the specified access modifiers, staticness, return type and argument list.
+     * 
+     * <p>
+     * If a non-public method is found then it is made accessible.
+     * 
+     * <p>
+     * This is the most generic variant of {@code requireMethod}
+     * that all other variants call internall.y
+     * 
+     * @param expectedAccess One or more (OR-ed) of PUBLIC, PROTECTED, PRIVATE or PACKAGE_PRIVATE to allow, or null to not check.
+     * @param expectStatic Whether the method must be static or non-static, or null to not check.
+     * @param cls The class whose method to look for.
+     * @param returnType The expected return type, or null to not check.
+     * @param name The name of the method.
+     * @param params The expected types of the parameters.
+     * @return The method reflection object. Never null.
+     * @throws AssertionError If the method could not be found.
+     */
+    public static Method requireMethod(Integer expectedAccess, Boolean expectStatic, Class<?> cls, Class<?> returnType, String name, Class<?>... params) {
+        Method m;
+        try {
+            m = getDeclaredMethodInInheritanceTree(cls, name, params);
+            m.setAccessible(true);
+        } catch (NoSuchMethodException ex) {
+            throw new AssertionError(tr("method_missing", niceMethodSignature(name, params), cls));
+        } catch (SecurityException ex) {
+            throw new AssertionError(tr("method_inaccessible", niceMethodSignature(name, params), cls));
         }
+        
+        if (returnType != null) {
+            if (!m.getReturnType().equals(returnType)) {
+                throw new AssertionError(tr("method_wrong_return_type", niceMethodSignature(returnType, name, params), cls));
+            }
+        }
+        
+        if (expectStatic != null) {
+            boolean isStatic = ((m.getModifiers() & Modifier.STATIC) != 0);
+            if (isStatic && !expectStatic) {
+                throw new AssertionError(tr("method_should_not_be_static", niceMethodSignature(returnType, name, params), cls));
+            } else if (!isStatic && expectStatic) {
+                throw new AssertionError(tr("method_should_be_static", niceMethodSignature(returnType, name, params), cls));
+            }
+        }
+        
+        if (!isExpectedAccess(expectedAccess, m.getModifiers())) {
+            throw new AssertionError(tr("method_wrong_access", niceMethodSignature(returnType, name, params), cls, setOfAccessModsToString(expectedAccess)));
+        }
+        
         return m;
+    }
+    
+    /**
+     * Like {@code Class.getMethod()} but also finds non-public methods.
+     */
+    private static Method getDeclaredMethodInInheritanceTree(Class<?> cls, String name, Class<?>... params) throws NoSuchMethodException {
+        while (cls != null) {
+            try {
+                return cls.getDeclaredMethod(name, params);
+            } catch (NoSuchMethodException ex) {
+            }
+            cls = cls.getSuperclass();
+        }
+        throw new NoSuchMethodException("Method " + niceMethodSignature(name, params) + " not found");
+    }
+    
+    private static String setOfAccessModsToString(int accessMod) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < ALL_ACCESS_MODIFIERS.length; ++i) {
+            if ((accessMod & ALL_ACCESS_MODIFIERS[i]) != 0) {
+                if (sb.length() > 0) {
+                    sb.append("/");
+                }
+                sb.append(ALL_ACCESS_MODIFIERS_STR[i]);
+            }
+        }
+        
+        return sb.toString();
+    }
+    
+    private static boolean isExpectedAccess(Integer expectedAccess, int modifiers) {
+        if (expectedAccess != null) {
+            boolean accessOk = false;
+            if ((expectedAccess & PACKAGE_PRIVATE) != 0 && isPackagePrivate(modifiers)) {
+                accessOk = true;
+            }
+            expectedAccess = expectedAccess & ~PACKAGE_PRIVATE;
+            if ((modifiers & expectedAccess) != 0) {
+                accessOk = true;
+            }
+            return accessOk;
+        } else {
+            return true;
+        }
+    }
+    
+    private static boolean isPackagePrivate(int accessMod) {
+        return !Modifier.isPublic(accessMod) &&
+                !Modifier.isProtected(accessMod) &&
+                !Modifier.isPrivate(accessMod);
     }
 
     /**

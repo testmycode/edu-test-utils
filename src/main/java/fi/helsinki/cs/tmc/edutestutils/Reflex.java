@@ -2,6 +2,7 @@ package fi.helsinki.cs.tmc.edutestutils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
  * Provides the features of {@link ReflectionUtils} as a cute typesafe/IDE-friendly DSL.
@@ -297,21 +298,68 @@ public class Reflex {
         }
         
         /**
+         * Tells whether this method exists and is public.
+         */
+        public boolean isPublic() {
+            return hasModifier(Modifier.PUBLIC);
+        }
+        
+        /**
+         * Tells whether this method exists and is protected.
+         */
+        public boolean isProtected() {
+            return hasModifier(Modifier.PROTECTED);
+        }
+        
+        /**
+         * Tells whether this method exists and is private.
+         */
+        public boolean isPrivate() {
+            return hasModifier(Modifier.PRIVATE);
+        }
+        
+        /**
+         * Tells whether this method exists and is package private.
+         */
+        public boolean isPackagePrivate() {
+            return !hasModifier(Modifier.PUBLIC) &&
+                    !hasModifier(Modifier.PROTECTED) &&
+                    !hasModifier(Modifier.PRIVATE);
+        }
+        
+        /**
          * Throws {@link AssertionError} if this method or constructor doesn't exist.
          */
         public void requireExists() throws AssertionError {
-            switch (method.methodType) {
-                case CONSTRUCTOR:
-                    ReflectionUtils.requireConstructor(method.cls, paramTypes);
-                    break;
-                case METHOD:
-                    ReflectionUtils.requireMethod(false, method.cls, method.returnType, method.name, paramTypes);
-                    break;
-                case STATIC_METHOD:
-                    ReflectionUtils.requireMethod(true, method.cls, method.returnType, method.name, paramTypes);
-                break;
-                default: throw new IllegalStateException("Implementation error in Reflex.");
-            }
+            requireExists(null);
+        }
+        
+        /**
+         * Throws {@link AssertionError} if this method or constructor doesn't exist or is not public.
+         */
+        public void requirePublic() throws AssertionError {
+            requireExists(ReflectionUtils.PUBLIC);
+        }
+        
+        /**
+         * Throws {@link AssertionError} if this method or constructor doesn't exist or is not protected.
+         */
+        public void requireProtected() throws AssertionError {
+            requireExists(ReflectionUtils.PROTECTED);
+        }
+        
+        /**
+         * Throws {@link AssertionError} if this method or constructor doesn't exist or is not private.
+         */
+        public void requirePrivate() throws AssertionError {
+            requireExists(ReflectionUtils.PRIVATE);
+        }
+        
+        /**
+         * Throws {@link AssertionError} if this method or constructor doesn't exist or is not package private.
+         */
+        public void requirePackagePrivate() throws AssertionError {
+            requireExists(ReflectionUtils.PACKAGE_PRIVATE);
         }
         
         /**
@@ -387,6 +435,42 @@ public class Reflex {
             }
             
             return ReflectionUtils.invokeMethod(method.returnType, getMethod(), self, params);
+        }
+        
+        private void requireExists(Integer expectedAccess) throws AssertionError {
+            switch (method.methodType) {
+                case CONSTRUCTOR:
+                    ReflectionUtils.requireConstructor(expectedAccess, method.cls, paramTypes);
+                    break;
+                case METHOD:
+                    ReflectionUtils.requireMethod(expectedAccess, false, method.cls, method.returnType, method.name, paramTypes);
+                    break;
+                case STATIC_METHOD:
+                    ReflectionUtils.requireMethod(expectedAccess, true, method.cls, method.returnType, method.name, paramTypes);
+                break;
+                default: throw new IllegalStateException("Implementation error in Reflex.");
+            }
+        }
+        
+        private boolean hasModifier(int mod) {
+            Integer m = getModifiers();
+            if (m != null) {
+                return (m & mod) != 0;
+            } else {
+                return false;
+            }
+        }
+        
+        private Integer getModifiers() {
+            if (exists()) {
+                if (method.methodType == MethodType.CONSTRUCTOR) {
+                    return getConstructor().getModifiers();
+                } else {
+                    return getMethod().getModifiers();
+                }
+            } else {
+                return null;
+            }
         }
     }
     

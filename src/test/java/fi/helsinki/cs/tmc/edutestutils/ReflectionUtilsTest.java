@@ -22,6 +22,12 @@ public class ReflectionUtilsTest {
         public TestSubject(String x) {
             throw new IllegalStateException();
         }
+        private TestSubject(EmptyClass x) {
+            this.x = 1;
+        }
+        TestSubject(EmptyClass x, EmptyClass y) {
+            this.x = 2;
+        }
         public int getX() {
             return x;
         }
@@ -36,6 +42,12 @@ public class ReflectionUtilsTest {
         }
         public Object returnsNull() {
             return null;
+        }
+        private int privateMethod() {
+            return 42;
+        }
+        int packagePrivateMethod() {
+            return 42;
         }
     }
     
@@ -71,6 +83,41 @@ public class ReflectionUtilsTest {
     }
     
     @Test
+    public void requireConstructorSucceedsWhenAccessModifiersMatch() {
+        ReflectionUtils.requireConstructor(ReflectionUtils.PUBLIC | ReflectionUtils.PRIVATE, TestSubject.class, int.class);
+        ReflectionUtils.requireConstructor(ReflectionUtils.PUBLIC | ReflectionUtils.PACKAGE_PRIVATE, TestSubject.class, int.class);
+        ReflectionUtils.requireConstructor(ReflectionUtils.PUBLIC, TestSubject.class, int.class);
+        ReflectionUtils.requireConstructor(ReflectionUtils.PRIVATE, TestSubject.class, EmptyClass.class);
+        ReflectionUtils.requireConstructor(ReflectionUtils.PRIVATE | ReflectionUtils.PUBLIC, TestSubject.class, EmptyClass.class);
+    }
+
+    @Test(expected=AssertionError.class)
+    public void requireConstructorFailsWhenAccessModifiersDontMatch() {
+        ReflectionUtils.requireConstructor(ReflectionUtils.PRIVATE, TestSubject.class, int.class);
+    }
+
+    @Test
+    public void requireConstructorSucceedsWhenDontCareAboutAccessModifiers() {
+        ReflectionUtils.requireConstructor((Integer)null, TestSubject.class, int.class);
+    }
+
+    @Test
+    public void requireConstructorSucceedsWhenAccessModifiersMatchPackagePrivate() {
+        ReflectionUtils.requireConstructor(ReflectionUtils.PACKAGE_PRIVATE, TestSubject.class, EmptyClass.class, EmptyClass.class);
+    }
+
+    @Test(expected=AssertionError.class)
+    public void requireConstructorFailsWhenAccessModifiersDontMatchPackagePrivate() {
+        ReflectionUtils.requireConstructor(ReflectionUtils.PACKAGE_PRIVATE, TestSubject.class, EmptyClass.class);
+    }
+
+    @Test
+    public void canRequireAndCallPrivateConstructors() throws Throwable {
+        Constructor<?> ctor = ReflectionUtils.requireConstructor(ReflectionUtils.PRIVATE, TestSubject.class, EmptyClass.class);
+        assertTrue(ctor.newInstance(new EmptyClass()) instanceof TestSubject);
+    }
+    
+    @Test
     public void requireMethodFindsMethodByParameterList() {
         assertNotNull(ReflectionUtils.requireMethod(TestSubject.class, "getX"));
         assertNotNull(ReflectionUtils.requireMethod(TestSubject.class, "setX", Integer.TYPE));
@@ -99,6 +146,43 @@ public class ReflectionUtilsTest {
     @Test(expected=AssertionError.class)
     public void requireMethodFailsWhenStaticWhenShouldNotBe() {
         ReflectionUtils.requireMethod(false, TestSubject.class, String.class, "staticMethod");
+    }
+    
+    @Test
+    public void requireMethodSucceedsWhenAccessModifiersMatch() {
+        ReflectionUtils.requireMethod(ReflectionUtils.PUBLIC | ReflectionUtils.PRIVATE, false, TestSubject.class, int.class, "getX");
+        ReflectionUtils.requireMethod(ReflectionUtils.PUBLIC | ReflectionUtils.PACKAGE_PRIVATE, false, TestSubject.class, int.class, "getX");
+        ReflectionUtils.requireMethod(ReflectionUtils.PUBLIC, false, TestSubject.class, int.class, "getX");
+        ReflectionUtils.requireMethod(ReflectionUtils.PRIVATE, false, TestSubject.class, int.class, "privateMethod");
+        ReflectionUtils.requireMethod(ReflectionUtils.PRIVATE | ReflectionUtils.PUBLIC, false, TestSubject.class, int.class, "privateMethod");
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void requireMethodFailsWhenAccessModifiersDontMatch() {
+        ReflectionUtils.requireMethod(ReflectionUtils.PRIVATE, false, TestSubject.class, int.class, "getX");
+    }
+    
+    @Test
+    public void requireMethodSucceedsWhenDontCareAboutAccessModifiers() {
+        ReflectionUtils.requireMethod(null, false, TestSubject.class, int.class, "getX");
+    }
+    
+    @Test
+    public void requireMethodSucceedsWhenAccessModifiersMatchPackagePrivate() {
+        ReflectionUtils.requireMethod(ReflectionUtils.PACKAGE_PRIVATE, false, TestSubject.class, int.class, "packagePrivateMethod");
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void requireMethodFailsWhenAccessModifiersDontMatchPackagePrivate() {
+        ReflectionUtils.requireMethod(ReflectionUtils.PACKAGE_PRIVATE, false, TestSubject.class, int.class, "getX");
+    }
+    
+    @Test
+    public void canRequireAndCallPrivateMethods() throws Throwable {
+        Method m = ReflectionUtils.requireMethod(ReflectionUtils.PRIVATE, false, TestSubject.class, int.class, "privateMethod");
+        TestSubject obj = new TestSubject();
+        int ret = (Integer)m.invoke(obj);
+        assertEquals(42, ret);
     }
     
     @Test

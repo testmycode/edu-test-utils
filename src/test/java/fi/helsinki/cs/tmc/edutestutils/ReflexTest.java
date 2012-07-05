@@ -23,6 +23,12 @@ public class ReflexTest {
         public TestSubject(String x) {
             throw new IllegalStateException();
         }
+        private TestSubject(EmptyClass x) {
+            this.x = 1;
+        }
+        TestSubject(EmptyClass x, EmptyClass y) {
+            this.x = 2;
+        }
         public int getX() {
             return x;
         }
@@ -34,6 +40,15 @@ public class ReflexTest {
         }
         public static int staticMethod(int a, int b) {
             return a + b;
+        }
+        public Object returnsNull() {
+            return null;
+        }
+        private int privateMethod() {
+            return 42;
+        }
+        int packagePrivateMethod() {
+            return 42;
         }
     }
     
@@ -159,6 +174,39 @@ public class ReflexTest {
         
         assertTrue(testSubject.method("getX").returning(int.class).takingNoParams().exists());
         assertFalse(testSubject.staticMethod("getX").returning(int.class).takingNoParams().exists());
+    }
+    
+    @Test
+    public void requireMethodWithAccessModifiersSuccessfully() throws Throwable {
+        Reflex.reflect(TestSubject.class).method("getX").returning(int.class).takingNoParams().requirePublic();
+        Reflex.reflect(TestSubject.class).method("privateMethod").returning(int.class).takingNoParams().requirePrivate();
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void requireMethodWithAccessModifiersUnsuccessfully() throws Throwable {
+        Reflex.reflect(TestSubject.class).method("getX").returning(int.class).takingNoParams().requirePrivate();
+    }
+    
+    @Test
+    public void requireStaticMethodWithAccessModifiersSuccessfully() throws Throwable {
+        Reflex.reflect(TestSubject.class).staticMethod("staticMethod").returning(int.class).taking(int.class, int.class).requirePublic();
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void requireStaticMethodWithAccessModifiersUnsuccessfully() throws Throwable {
+        Reflex.reflect(TestSubject.class).staticMethod("staticMethod").returning(int.class).taking(int.class, int.class).requirePrivate();
+    }
+    
+    @Test
+    public void requireConstructorWithAccessModifiersSuccessfully() throws Throwable {
+        Reflex.reflect(TestSubject.class).constructor().taking(int.class).requirePublic();
+        Reflex.reflect(TestSubject.class).constructor().taking(EmptyClass.class).requirePrivate();
+        Reflex.reflect(TestSubject.class).constructor().taking(EmptyClass.class, EmptyClass.class).requirePackagePrivate();
+    }
+    
+    @Test(expected=AssertionError.class)
+    public void requireConstructorWithAccessModifiersUnsuccessfully() throws Throwable {
+        Reflex.reflect(TestSubject.class).constructor().taking(int.class).requirePrivate();
     }
     
     @Test
