@@ -174,6 +174,15 @@ public class ReflexTest {
         
         assertNotNull(ex);
         assertEquals("Luokkaa `Nonexistent` ei löytynyt.", ex.getMessage());
+        
+        try {
+            Reflex.reflect(TestSubject.class).staticMethod("getX").returning(int.class).takingNoParams().requireExists();
+        } catch (AssertionError e) {
+            ex = e;
+        }
+        
+        assertNotNull(ex);
+        assertEquals("Luokan TestSubject metodin int getX() pitäisi olla static.", ex.getMessage());
     }
     
 }

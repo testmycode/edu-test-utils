@@ -51,7 +51,15 @@ public class ReflectionUtils {
     }
     
     private static String tr(String key, Object... args) {
-        return new MessageFormat(msgBundle.getString(key), msgLocale).format(args);
+        String[] argStrs = new String[args.length];
+        for (int i = 0; i < args.length; ++i) {
+            if (args[i] instanceof Class<?>) {
+                argStrs[i] = ((Class<?>)args[i]).getSimpleName();
+            } else {
+                argStrs[i] = args[i].toString();
+            }
+        }
+        return new MessageFormat(msgBundle.getString(key), msgLocale).format(argStrs);
     }
     
     /**
@@ -231,9 +239,9 @@ public class ReflectionUtils {
             }
             return m;
         } catch (NoSuchMethodException ex) {
-            throw new AssertionError(tr("method_missing", niceMethodSignature(name, params)));
+            throw new AssertionError(tr("method_missing", niceMethodSignature(name, params), cls));
         } catch (SecurityException ex) {
-            throw new AssertionError(tr("method_inaccessible", niceMethodSignature(name, params)));
+            throw new AssertionError(tr("method_inaccessible", niceMethodSignature(name, params), cls));
         }
     }
     
@@ -250,7 +258,7 @@ public class ReflectionUtils {
     public static Method requireMethod(Class<?> cls, Class<?> returnType, String name, Class<?>... params) {
         Method m = requireMethod(cls, name, params);
         if (!m.getReturnType().equals(returnType)) {
-            throw new AssertionError(tr("method_wrong_return_type", niceMethodSignature(returnType, name, params)));
+            throw new AssertionError(tr("method_wrong_return_type", niceMethodSignature(returnType, name, params), cls));
         }
         return m;
     }
@@ -270,9 +278,9 @@ public class ReflectionUtils {
         Method m = requireMethod(cls, returnType, name, params);
         boolean isStatic = ((m.getModifiers() & Modifier.STATIC) != 0);
         if (isStatic && !expectStatic) {
-            throw new AssertionError(tr("method_should_not_be_static", niceMethodSignature(returnType, name, params)));
+            throw new AssertionError(tr("method_should_not_be_static", niceMethodSignature(returnType, name, params), cls));
         } else if (!isStatic && expectStatic) {
-            throw new AssertionError(tr("method_should_be_static", niceMethodSignature(returnType, name, params)));
+            throw new AssertionError(tr("method_should_be_static", niceMethodSignature(returnType, name, params), cls));
         }
         return m;
     }
@@ -281,10 +289,20 @@ public class ReflectionUtils {
      * Returns a human-friendly representation of a method signature.
      * 
      * @param m The method.
-     * @return A human-readable name and parameter list of the method.
+     * @return A human-readable return type, name and parameter list of the method.
      */
     public static String niceMethodSignature(Method m) {
-        return niceMethodSignature(m.getName(), m.getParameterTypes());
+        return niceMethodSignature(m.getReturnType(), m.getName(), m.getParameterTypes());
+    }
+    
+    /**
+     * Returns a human-friendly representation of a constructor signature.
+     * 
+     * @param c The constructor.
+     * @return A human-readable name and parameter list of the constructor.
+     */
+    public static String niceConstructorSignature(Constructor c) {
+        return niceMethodSignature(c.getName(), c.getParameterTypes());
     }
 
     /**
@@ -313,7 +331,7 @@ public class ReflectionUtils {
      * @param returnType The return type of the method.
      * @param methodName The name of the method.
      * @param paramTypes The method's parameter types.
-     * @return A human-readable name and parameter list of the method.
+     * @return A human-readable return type, name and parameter list of the method.
      */
     public static String niceMethodSignature(Class<?> returnType, String methodName, Class<?>... paramTypes) {
         String result = returnType.getSimpleName() + " " + methodName;
@@ -348,9 +366,9 @@ public class ReflectionUtils {
         try {
             return ctor.newInstance(params);
         } catch (IllegalAccessException ex) {
-            throw new AssertionError(tr("ctor_inaccessible", ctor.toGenericString()));
+            throw new AssertionError(tr("ctor_inaccessible", niceConstructorSignature(ctor)));
         } catch (IllegalArgumentException ex) {
-            throw new AssertionError(tr("ctor_incorrect_params", ctor.toGenericString()));
+            throw new AssertionError(tr("ctor_incorrect_params", niceConstructorSignature(ctor)));
         } catch (InstantiationException ex) {
             throw new AssertionError(tr("ctor_abstract", ctor.getDeclaringClass().getSimpleName()));
         } catch (ExceptionInInitializerError ex) {
@@ -380,22 +398,23 @@ public class ReflectionUtils {
      */
     @SuppressWarnings("unchecked")
     public static <T> T invokeMethod(Class<T> retType, Method method, Object self, Object... params) throws Throwable {
+        Class<?> cls = method.getDeclaringClass();
         try {
             Object ret = method.invoke(self, params);
             if (retType == Void.TYPE) {
                 if (ret != null) {
-                    throw new AssertionError(tr("method_should_be_void", niceMethodSignature(method)));
+                    throw new AssertionError(tr("method_should_be_void", niceMethodSignature(method), cls));
                 }
                 return null;
             } else if (ret == null || primitiveTypeToObjectType(retType).isInstance(ret)) {
                 return (T) ret;
             } else {
-                throw new AssertionError(tr("method_wrong_return_type", niceMethodSignature(method)));
+                throw new AssertionError(tr("method_wrong_return_type", niceMethodSignature(method), cls));
             }
         } catch (IllegalAccessException ex) {
-            throw new AssertionError(tr("method_inaccessible", niceMethodSignature(method)));
+            throw new AssertionError(tr("method_inaccessible", niceMethodSignature(method), cls));
         } catch (IllegalArgumentException ex) {
-            throw new AssertionError(tr("method_incorrect_params", niceMethodSignature(method)));
+            throw new AssertionError(tr("method_incorrect_params", niceMethodSignature(method), cls));
         } catch (InvocationTargetException ex) {
             throw ex.getCause();
         }
