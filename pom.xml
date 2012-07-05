@@ -27,7 +27,7 @@
     
     <scm>
         <connection>scm:git:https://github.com/testmycode/edu-test-utils.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:testmycode/edu-test-utils.git</developerConnection>
+        <developerConnection>scm:git:git@github.com:testmycode/edu-test-utils.git</developerConnection>
         <url>https://github.com/testmycode/edu-test-utils</url>
     </scm>
     
