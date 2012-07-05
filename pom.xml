@@ -26,8 +26,8 @@
     </licenses>
     
     <scm>
-        <connection>https://github.com/testmycode/edu-test-utils.git</connection>
-        <developerConnection>git@github.com:testmycode/edu-test-utils.git</developerConnection>
+        <connection>scm:git:https://github.com/testmycode/edu-test-utils.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:testmycode/edu-test-utils.git</developerConnection>
         <url>https://github.com/testmycode/edu-test-utils</url>
     </scm>
     
