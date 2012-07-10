@@ -185,6 +185,7 @@ public class ReflexTest {
     public void requireMethodWithAccessModifiersSuccessfully() throws Throwable {
         Reflex.reflect(TestSubject.class).method("getX").returning(int.class).takingNoParams().requirePublic();
         Reflex.reflect(TestSubject.class).method("privateMethod").returning(int.class).takingNoParams().requirePrivate();
+        Reflex.reflect(TestSubject.class).method("privateMethod").returning(int.class).takingNoParams().requireExists();
     }
     
     @Test(expected=AssertionError.class)
@@ -212,6 +213,16 @@ public class ReflexTest {
     @Test(expected=AssertionError.class)
     public void requireConstructorWithAccessModifiersUnsuccessfully() throws Throwable {
         Reflex.reflect(TestSubject.class).constructor().taking(int.class).requirePrivate();
+    }
+    
+    @Test
+    public void readingAccessModifiers() throws Throwable {
+        MethodRef0<TestSubject, Integer> mr = Reflex.reflect(TestSubject.class).method("privateMethod").returning(int.class).takingNoParams();
+        assertTrue(mr.exists());
+        assertTrue(mr.isPrivate());
+        assertFalse(mr.isPublic());
+        assertFalse(mr.isProtected());
+        assertFalse(mr.isPackagePrivate());
     }
     
     @Test

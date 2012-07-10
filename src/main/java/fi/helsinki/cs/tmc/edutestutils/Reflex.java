@@ -418,9 +418,9 @@ public class Reflex {
         {
             switch (method.methodType) {
                 case METHOD:
-                    return ReflectionUtils.requireMethod(false, method.cls, method.returnType, method.name, paramTypes);
+                    return ReflectionUtils.requireMethod(null, false, method.cls, method.returnType, method.name, paramTypes);
                 case STATIC_METHOD:
-                    return ReflectionUtils.requireMethod(true, method.cls, method.returnType, method.name, paramTypes);
+                    return ReflectionUtils.requireMethod(null, true, method.cls, method.returnType, method.name, paramTypes);
                 default:
                     throw new IllegalStateException("getMethod() called on a constructor");
             }
@@ -433,7 +433,7 @@ public class Reflex {
         {
             switch (method.methodType) {
                 case CONSTRUCTOR:
-                    return ReflectionUtils.requireConstructor(method.cls, paramTypes);
+                    return ReflectionUtils.requireConstructor(null, method.cls, paramTypes);
                 default:
                     throw new IllegalStateException("getConstructor() called on a method");
             }
