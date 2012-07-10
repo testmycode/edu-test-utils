@@ -45,7 +45,7 @@ public class CpuTimeLimitTest {
             @Override
             public void run() {
                 long start = System.currentTimeMillis();
-                while (System.currentTimeMillis() < start + 1500) {
+                while (System.currentTimeMillis() < start + 3000) {
                 }
             }
         });
