@@ -160,7 +160,7 @@ public class MockStdio implements TestRule {
      * Redirects I/O to/from buffers.
      * 
      * <p>
-     * If your use StaticMockStdio as a JUnit rule, there is no need to call
+     * If your use MockStdio as a JUnit rule, there is no need to call
      * this directly.
      */
     public void enable() {
@@ -191,7 +191,7 @@ public class MockStdio implements TestRule {
      * Redirects I/O to/from the original streams.
      * 
      * <p>
-     * If your use StaticMockStdio as a JUnit rule, there is no need to call
+     * If your use MockStdio as a JUnit rule, there is no need to call
      * this directly.
      */
     public void disable() {
