@@ -226,6 +226,13 @@ public class ReflexTest {
     }
     
     @Test
+    public void callingPrivateMethods() throws Throwable {
+        MethodRef0<TestSubject, Integer> mr = Reflex.reflect(TestSubject.class).method("privateMethod").returning(int.class).takingNoParams();
+        int result = mr.invokeOn(new TestSubject());
+        assertEquals(42, result);
+    }
+    
+    @Test
     public void methodSignature() throws Throwable {
         ClassRef<TestSubject> testSubject = Reflex.reflect(TestSubject.class);
         assertEquals("int getX()", testSubject.method("getX").returning(int.class).takingNoParams().signature());
