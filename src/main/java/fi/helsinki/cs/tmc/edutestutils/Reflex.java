@@ -66,7 +66,7 @@ import java.lang.reflect.Modifier;
  * {@code
  * public class MyTest<_Thing> {
  *     ...
- *     ClassRef<_Thing> thingCls = Reflex.reflext("Thing");
+ *     ClassRef<_Thing> thingCls = Reflex.reflect("Thing");
  *     ...
  * }
  * }
