@@ -6,9 +6,11 @@ import java.util.Locale;
 /**
  * Returns either the default locale or a locale defined in a system property.
  * 
+ * <p>
  * The locale affects the language of user-friendly error messages in
  * components like {@link ReflectionUtils}.
  * 
+ * <p>
  * The default may be set in the system property {@code fi.helsinki.cs.tmc.edutestutils.defaultLocale}.
  * If it's not set, the system default is used.
  */
@@ -19,6 +21,7 @@ public class EduTestUtilsDefaultLocale {
     /**
      * Listens to changes in the default locale.
      * 
+     * <p>
      * For internal use.
      */
     public static interface Listener {
@@ -37,6 +40,7 @@ public class EduTestUtilsDefaultLocale {
     /**
      * Returns the current locale.
      * 
+     * <p>
      * Never returns null.
      */
     public static Locale get() {
@@ -86,6 +90,7 @@ public class EduTestUtilsDefaultLocale {
     /**
      * Registers a listener for when the locale changes.
      * 
+     * <p>
      * For internal use.
      */
     public static void addListener(Listener listener) {
@@ -95,6 +100,7 @@ public class EduTestUtilsDefaultLocale {
     /**
      * Removes a listener for when the locale changes.
      * 
+     * <p>
      * For internal use.
      */
     public static void removeListener(Listener listener) {

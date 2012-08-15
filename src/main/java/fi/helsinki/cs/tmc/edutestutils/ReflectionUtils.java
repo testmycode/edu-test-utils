@@ -27,8 +27,7 @@ import java.util.ResourceBundle;
  * 
  * <p>
  * NOTE: a common mistake is to forget the difference between {@code Integer.class} and
- * {@code Integer.TYPE}. The former refers to the object type {@code Integer} and the latter
- * to the primitive type {@code int}.
+ * {@code int.class}.
  * 
  * @see Reflex
  */
@@ -52,6 +51,9 @@ public class ReflectionUtils {
         });
         
         loadMsgBundle();
+    }
+    
+    private ReflectionUtils() {
     }
     
     private static void loadMsgBundle() {
@@ -373,6 +375,7 @@ public class ReflectionUtils {
     /**
      * Converts an access modifier ({@link #PUBLIC}, {@link #PROTECTED}, {@link #PRIVATE} and {@link #PACKAGE_PRIVATE}) to a lowercase string.
      * 
+     * <p>
      * If more than one access modifier is given (OR-ed together), then returns their lowercase names separated by slashes.
      * If the set of OR-ed access modifiers is empty, returns an empty string.
      */
