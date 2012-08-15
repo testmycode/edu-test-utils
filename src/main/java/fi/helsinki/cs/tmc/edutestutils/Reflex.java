@@ -219,6 +219,76 @@ public class Reflex {
         public MethodName<S> staticMethod(String name) {
             return new MethodName<S>(cls, null, MethodType.STATIC_METHOD, name);
         }
+        
+        /**
+         * Tells whether this class is public.
+         */
+        public boolean isPublic() {
+            return hasModifier(Modifier.PUBLIC);
+        }
+        
+        /**
+         * Tells whether this class is protected.
+         */
+        public boolean isProtected() {
+            return hasModifier(Modifier.PROTECTED);
+        }
+        
+        /**
+         * Tells whether this class is private.
+         */
+        public boolean isPrivate() {
+            return hasModifier(Modifier.PRIVATE);
+        }
+        
+        /**
+         * Tells whether this class is package private.
+         */
+        public boolean isPackagePrivate() {
+            return !hasModifier(Modifier.PUBLIC) &&
+                    !hasModifier(Modifier.PROTECTED) &&
+                    !hasModifier(Modifier.PRIVATE);
+        }
+        
+        /**
+         * Throws {@link AssertionError} if this class is not public.
+         */
+        public ClassRef<S> requirePublic() throws AssertionError {
+            ReflectionUtils.requireClassAccess(cls, ReflectionUtils.PUBLIC);
+            return this;
+        }
+        
+        /**
+         * Throws {@link AssertionError} if this class is not protected.
+         */
+        public ClassRef<S> requireProtected() throws AssertionError {
+            ReflectionUtils.requireClassAccess(cls, ReflectionUtils.PROTECTED);
+            return this;
+        }
+        
+        /**
+         * Throws {@link AssertionError} if this class is not private.
+         */
+        public ClassRef<S> requirePrivate() throws AssertionError {
+            ReflectionUtils.requireClassAccess(cls, ReflectionUtils.PRIVATE);
+            return this;
+        }
+        
+        /**
+         * Throws {@link AssertionError} if this class is not package private.
+         */
+        public ClassRef<S> requirePackagePrivate() throws AssertionError {
+            ReflectionUtils.requireClassAccess(cls, ReflectionUtils.PACKAGE_PRIVATE);
+            return this;
+        }
+        
+        private boolean hasModifier(int mod) {
+            return (cls.getModifiers() & mod) != 0;
+        }
+        
+        private void requireModifier(int mod) {
+            ReflectionUtils.requireClassAccess(cls, mod);
+        }
     }
     
     /**
