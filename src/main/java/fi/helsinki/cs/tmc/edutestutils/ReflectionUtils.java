@@ -92,6 +92,18 @@ public class ReflectionUtils {
     }
     
     /**
+     * Throws an exception if the access modifiers of the given class are wrong.
+     * 
+     * @param cls A class whose access modifiers to check.
+     * @param expectedAccess One or more (OR-ed) of PUBLIC, PROTECTED, PRIVATE or PACKAGE_PRIVATE to allow, or null to not check.
+     */
+    public static void requireClassAccess(Class<?> cls, Integer expectedAccess) {
+        if (!isExpectedAccess(expectedAccess, cls.getModifiers())) {
+            throw new AssertionError(tr("class_wrong_access", cls.getName(), accessModifiersToString(expectedAccess)));
+        }
+    }
+    
+    /**
      * Loads a new instance of the class in a new class loader.
      * 
      * <p>

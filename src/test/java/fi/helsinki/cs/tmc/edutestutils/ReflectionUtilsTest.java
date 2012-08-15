@@ -232,6 +232,18 @@ public class ReflectionUtilsTest {
         int x = ReflectionUtils.invokeMethod(int.class, m, obj);
         assertEquals(3, x);
     }
+    
+    @Test(expected=AssertionError.class)
+    public void requireClassAccessThrowsIfTheClassAccessModifierDoesntMatch() {
+        Class<?> cls = ReflectionUtils.findClass("fi.helsinki.cs.tmc.edutestutils.testpkg.PkgPrivateClass");
+        ReflectionUtils.requireClassAccess(cls, ReflectionUtils.PUBLIC | ReflectionUtils.PROTECTED | ReflectionUtils.PRIVATE);
+    }
+    
+    @Test
+    public void requireClassAccessDoesntDoesntThrowIfTheClassAccessModifierMatches() {
+        Class<?> cls = ReflectionUtils.findClass("fi.helsinki.cs.tmc.edutestutils.testpkg.PkgPrivateClass");
+        ReflectionUtils.requireClassAccess(cls, ReflectionUtils.PACKAGE_PRIVATE);
+    }
 
     @Test
     public void localizedErrorMessages() throws Throwable {
