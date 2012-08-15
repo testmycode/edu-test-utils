@@ -17,6 +17,10 @@ import java.util.ResourceBundle;
  * with nice error messages for missing methods and other mistakes.
  * 
  * <p>
+ * You probably want to use the nicer interface, {@link Reflex}, instead of
+ * this most of the time.
+ * 
+ * <p>
  * All methods throw AssertionError with a friendly error message on failure
  * (or {@link IllegalArgumentException} if used incorrectly),
  * so you can use them as if they were assertions.
@@ -204,7 +208,7 @@ public class ReflectionUtils {
     }
     
     /**
-     * Finds a constructor with the specified argument list.
+     * Finds a public constructor with the specified argument list.
      * 
      * @param <T> The type whose constructor to look for.
      * @param cls The class whose constructor to look for.
