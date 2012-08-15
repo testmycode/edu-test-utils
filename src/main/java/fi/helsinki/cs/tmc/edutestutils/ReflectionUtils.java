@@ -217,13 +217,7 @@ public class ReflectionUtils {
      * @throws AssertionError If the constructor could not be found.
      */
     public static <T> Constructor<T> requireConstructor(Class<T> cls, Class<?> ... paramTypes) {
-        try {
-            return cls.getConstructor(paramTypes);
-        } catch (NoSuchMethodException ex) {
-            throw new AssertionError(tr("ctor_missing", niceMethodSignature(cls.getSimpleName(), paramTypes)));
-        } catch (SecurityException ex) {
-            throw new AssertionError(tr("ctor_inaccessible", niceMethodSignature(cls.getSimpleName(), paramTypes)));
-        }
+        return requireConstructor(PUBLIC, cls, paramTypes);
     }
     
     /**

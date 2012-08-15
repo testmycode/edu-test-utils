@@ -222,6 +222,16 @@ public class ReflectionUtilsTest {
         Method m = ReflectionUtils.requireMethod(TestSubject.class, "returnsNull");
         assertNull(ReflectionUtils.invokeMethod(Object.class, m, obj));
     }
+    
+    @Test
+    public void packagePrivateClassAndMethodsWork() throws Throwable {
+        Class<?> cls = ReflectionUtils.findClass("fi.helsinki.cs.tmc.edutestutils.testpkg.PkgPrivateClass");
+        Constructor<?> ctor = ReflectionUtils.requireConstructor(cls, int.class);
+        Object obj = ReflectionUtils.invokeConstructor(ctor, 3);
+        Method m = ReflectionUtils.requireMethod(cls, "getX");
+        int x = ReflectionUtils.invokeMethod(int.class, m, obj);
+        assertEquals(3, x);
+    }
 
     @Test
     public void localizedErrorMessages() throws Throwable {
