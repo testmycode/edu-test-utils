@@ -242,7 +242,7 @@ public class ReflectionUtils {
         }
         
         if (!isExpectedAccess(expectedAccess, ctor.getModifiers())) {
-            throw new AssertionError(tr("ctor_wrong_access", niceConstructorSignature(ctor), setOfAccessModsToString(expectedAccess)));
+            throw new AssertionError(tr("ctor_wrong_access", niceConstructorSignature(ctor), accessModifiersToString(expectedAccess)));
         }
         
         return ctor;
@@ -340,7 +340,7 @@ public class ReflectionUtils {
         }
         
         if (!isExpectedAccess(expectedAccess, m.getModifiers())) {
-            throw new AssertionError(tr("method_wrong_access", niceMethodSignature(returnType, name, params), cls, setOfAccessModsToString(expectedAccess)));
+            throw new AssertionError(tr("method_wrong_access", niceMethodSignature(returnType, name, params), cls, accessModifiersToString(expectedAccess)));
         }
         
         return m;
@@ -360,7 +360,13 @@ public class ReflectionUtils {
         throw new NoSuchMethodException("Method " + niceMethodSignature(name, params) + " not found");
     }
     
-    private static String setOfAccessModsToString(int accessMod) {
+    /**
+     * Converts an access modifier ({@link #PUBLIC}, {@link #PROTECTED}, {@link #PRIVATE} and {@link #PACKAGE_PRIVATE}) to a lowercase string.
+     * 
+     * If more than one access modifier is given (OR-ed together), then returns their lowercase names separated by slashes.
+     * If the set of OR-ed access modifiers is empty, returns an empty string.
+     */
+    public static String accessModifiersToString(int accessMod) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < ALL_ACCESS_MODIFIERS.length; ++i) {
             if ((accessMod & ALL_ACCESS_MODIFIERS[i]) != 0) {
