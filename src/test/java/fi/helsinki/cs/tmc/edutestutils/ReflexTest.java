@@ -59,7 +59,7 @@ public class ReflexTest {
     
     @After
     public void resetLocale() {
-        ReflectionUtils.setMsgLocale(null);
+        EduTestUtilsDefaultLocale.reset();
     }
     
     @Test
@@ -270,7 +270,7 @@ public class ReflexTest {
     
     @Test
     public void localizedErrorMessages() throws Throwable {
-        ReflectionUtils.setMsgLocale(new Locale("fi"));
+        EduTestUtilsDefaultLocale.set(new Locale("fi"));
         
         AssertionError ex = null;
         try {

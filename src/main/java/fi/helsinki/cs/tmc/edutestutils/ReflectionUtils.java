@@ -45,19 +45,17 @@ public class ReflectionUtils {
     private static final String[] ALL_ACCESS_MODIFIERS_STR = { "public", "protected", "private", "package_private" };
     
     static {
-        setMsgLocale(null);
+        EduTestUtilsDefaultLocale.addListener(new EduTestUtilsDefaultLocale.Listener() {
+            public void eduTestUtilsLocaleChanged(Locale newLocale) {
+                loadMsgBundle();
+            }
+        });
+        
+        loadMsgBundle();
     }
     
-    /**
-     * Sets the locale to use when looking up assertion error messages.
-     * 
-     * @param newLocale The new locale, or null to reset to the default locale.
-     */
-    public static void setMsgLocale(Locale newLocale) {
-        if (newLocale == null) {
-            newLocale = Locale.getDefault();
-        }
-        msgLocale = newLocale;
+    private static void loadMsgBundle() {
+        msgLocale = EduTestUtilsDefaultLocale.get();
         msgBundle = ResourceBundle.getBundle(ReflectionUtils.class.getCanonicalName(), msgLocale);
     }
     
