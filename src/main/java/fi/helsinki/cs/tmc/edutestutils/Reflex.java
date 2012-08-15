@@ -113,7 +113,9 @@ public class Reflex {
      * See examples in the class docs. 
      */
     public static <S> ClassRef<S> reflect(Class<S> cls) {
-        if (cls == null) throw new NullPointerException("Class cannot be null");
+        if (cls == null) {
+            throw new NullPointerException("Class cannot be null");
+        }
         return new ClassRef<S>(cls);
     }
     
@@ -123,6 +125,7 @@ public class Reflex {
      * <p>
      * See examples in the class docs. 
      */
+    @SuppressWarnings("unchecked")
     public static <T> ClassRef<T> reflect(String className) {
         return new ClassRef<T>((Class<T>)ReflectionUtils.findClass(className));
     }
@@ -204,7 +207,9 @@ public class Reflex {
          * Selects non-static methods and continues with {@code .returning(...)}.
          */
         public MethodName<S> method(S self, String name) {
-            if (name == null) throw new NullPointerException("Method name cannot be null");
+            if (name == null) {
+                throw new NullPointerException("Method name cannot be null");
+            }
             return new MethodName<S>(cls, self, MethodType.METHOD, name);
         }
         
