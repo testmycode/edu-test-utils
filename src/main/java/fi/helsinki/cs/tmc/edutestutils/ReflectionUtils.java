@@ -148,6 +148,11 @@ public class ReflectionUtils {
      * the classloader that loaded it. See
      * <a href="http://tutorials.jenkov.com/java-reflection/dynamic-class-loading-reloading.html">here</a> for more information.
      * 
+     * <p>
+     * Any dependencies are still loaded using the system class loader.
+     * For instance, a String returned by a method of the loaded class is the same String
+     * as the one loaded by the system class loader.
+     * 
      * @param className The fully qualified name of the class to reload.
      * @return A new instance of the class.
      * @throws RuntimeException If an error occurs while reading the class file.
