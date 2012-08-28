@@ -173,14 +173,23 @@ public class ReflectionUtils {
         return newInstanceOfClass(cls.getName());
     }
     
-    private static Class<?> loadClassWith(String name, ClassLoader loader) {
+    /**
+     * Loads a class with the given class loader and gives user-friendly errors.
+     * 
+     * @param className The fully qualified name of the class to load.
+     * @param loader The class loader.
+     * @return The class as loaded by the given class loader.
+     * @throws RuntimeException If an error occurs while reading the class file.
+     * @throws AssertionError If the class could not be found.
+     */
+    public static Class<?> loadClassWith(String className, ClassLoader loader) {
         try {
-            return loader.loadClass(name);
+            return loader.loadClass(className);
         } catch (ClassNotFoundException ex) {
-            if (name.contains(".")) {
-                throw new AssertionError(tr("class_not_found_pkg", name));
+            if (className.contains(".")) {
+                throw new AssertionError(tr("class_not_found_pkg", className));
             } else {
-                throw new AssertionError(tr("class_not_found", name));
+                throw new AssertionError(tr("class_not_found", className));
             }
         }
     }
