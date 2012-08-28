@@ -130,6 +130,17 @@ public class Reflex {
         return new ClassRef<T>((Class<T>)ReflectionUtils.findClass(className));
     }
     
+    /**
+     * Enters the DSL with a class loaded at runtime (using the given class loader).
+     * 
+     * <p>
+     * See examples in the class docs. 
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> ClassRef<T> reflect(String className, ClassLoader loader) {
+        return new ClassRef<T>((Class<T>)ReflectionUtils.loadClassWith(className, loader));
+    }
+    
     
     static enum MethodType { CONSTRUCTOR, METHOD, STATIC_METHOD };
     
