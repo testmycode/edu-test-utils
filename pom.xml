@@ -87,6 +87,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <excludePackageNames>fi.helsinki.cs.tmc.edutestutils.classloaders</excludePackageNames>
+                </configuration>
             </plugin>
             <!-- Releases using mvn release:prepare and mvn release:perform. -->
             <plugin>

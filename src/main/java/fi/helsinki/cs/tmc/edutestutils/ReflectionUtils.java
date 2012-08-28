@@ -1,5 +1,6 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
+import fi.helsinki.cs.tmc.edutestutils.classloaders.SingleClassLoader;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -150,7 +151,7 @@ public class ReflectionUtils {
      * 
      * <p>
      * Any dependencies are still loaded using the system class loader.
-     * For instance, a String returned by a method of the loaded class is the same String
+     * For instance, a JLabel returned by a method of the loaded class is the same JLabel
      * as the one loaded by the system class loader.
      * 
      * @param className The fully qualified name of the class to reload.
@@ -159,47 +160,7 @@ public class ReflectionUtils {
      * @throws AssertionError If the class could not be found.
      */
     public static Class<?> newInstanceOfClass(final String className) {
-        ClassLoader loader = new ClassLoader() {
-            
-            @Override
-            public Class<?> loadClass(String name) throws ClassNotFoundException {
-                return loadClass(name, false);
-            }
-            
-            @Override
-            protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                if (!name.equals(className)) {
-                    return super.loadClass(name, resolve);
-                }
-                
-                InputStream classIn = getClass().getClassLoader().getResourceAsStream(name.replace('.', '/') + ".class");
-                if (classIn == null) {
-                    throw new ClassNotFoundException(name);
-                }
-                classIn = new BufferedInputStream(classIn);
-                
-                try {
-                    ByteArrayOutputStream buf = new ByteArrayOutputStream();
-
-                    int data = classIn.read();
-                    while (data != -1) {
-                        buf.write(data);
-                        data = classIn.read();
-                    }
-                    
-                    byte[] classDef = buf.toByteArray();
-                    return defineClass(name, classDef, 0, classDef.length);
-                } catch (IOException e) {
-                    throw new RuntimeException("Error reloading class " + name, e);
-                } finally {
-                    try {
-                        classIn.close();
-                    } catch (IOException e) {
-                    }
-                }
-            }
-        };
-        
+        ClassLoader loader = new SingleClassLoader(className);
         return loadClassWith(className, loader);
     }
     
