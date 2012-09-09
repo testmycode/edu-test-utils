@@ -1,10 +1,6 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
 import fi.helsinki.cs.tmc.edutestutils.classloaders.SingleClassLoader;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -439,16 +435,20 @@ public class ReflectionUtils {
      * @return A human-readable return type, name and parameter list of the method.
      */
     public static String niceMethodSignature(Class<?> returnType, String methodName, Class<?>... paramTypes) {
-        String result = returnType.getSimpleName() + " " + methodName;
-        result += "(";
+        StringBuilder sb = new StringBuilder();
+        if (returnType != null) {
+            sb.append(returnType.getSimpleName()).append(' ');
+        }
+        sb.append(methodName);
+        sb.append("(");
         if (paramTypes.length > 0) {
             for (int i = 0; i < paramTypes.length - 1; ++i) {
-                result += paramTypes[i].getSimpleName() + ", ";
+                sb.append(paramTypes[i].getSimpleName()).append(", ");
             }
-            result += paramTypes[paramTypes.length - 1].getSimpleName();
+            sb.append(paramTypes[paramTypes.length - 1].getSimpleName());
         }
-        result += ")";
-        return result;
+        sb.append(")");
+        return sb.toString();
     }
     
     /**
