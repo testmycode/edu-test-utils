@@ -13,14 +13,29 @@ import java.lang.reflect.Modifier;
  * {@code
  * // Get a ClassRef, which is the entry point to the DSL.
  * ClassRef<Thing> thingCls = Reflex.reflect(Thing.class);
- * // Use the DSL to get a specific constructor and call it.
- * Thing thing = thingCls.constructor().taking(int.class).invoke(123);
  * 
- * // Now find some specific methods and call those.
- * thingCls.method(thing, "setFoo").returningVoid().taking(int.class).invoke(5);
- * int result = thingCls.method(thing, "getFoo").returning(int.class).takingNoParams().invoke();
+ * // Use the DSL to get a constructor and call it.
+ * Thing thing = thingCls.constructor()
+ *         .taking(int.class)
+ *         .invoke(123);
+ * 
+ * // Now find some methods and call those.
+ * thingCls.method(thing, "setFoo")
+ *         .returningVoid()
+ *         .taking(int.class)
+ *         .invoke(5);
+ * int result = thingCls.method(thing, "getFoo")
+ *         .returning(int.class)
+ *         .takingNoParams()
+ *         .withNiceError("Make sure getFoo returns Foo correctly.")
+ *         .invoke();
  * }
  * </pre>
+ * 
+ * <p>
+ * Use {@link Reflex.MethodRef#withNiceError(java.lang.String)} to get
+ * better exception messages and optionally give the student a suggestion about
+ * why the method might fail.
  * 
  * <p>
  * References to methods and constructors can be stored in variables and called on multiple objects.
@@ -402,12 +417,17 @@ public class Reflex {
     /**
      * Refers to a method or constructor in a class and stores the expected result and parameter types.
      * 
+     * @param <Me> The type of the inheriting MethodRefN<...>
      * @param <S> The class containing the method.
      * @param <R> The expected return type.
      */
-    public static abstract class MethodRef<S, R> implements Cloneable {
+    public static abstract class MethodRef<Me extends MethodRef<?, S, R>, S, R> implements Cloneable {
         private final MethodAndReturnType<S, R> method;
         private final Class<?>[] paramTypes;
+        
+        // Protected and non-final to be settable in clone() and withErrorMsg()
+        protected boolean niceErrors = false;
+        protected String customErrorMsg = null;
 
         MethodRef(MethodAndReturnType<S, R> method, Class<?> ... paramTypes) {
             for (Class<?> cls : paramTypes) {
@@ -557,7 +577,17 @@ public class Reflex {
         
         private Object invokeCtor(Object... params) throws Throwable {
             Constructor<? extends S> ctor = getConstructor();
-            return ReflectionUtils.invokeConstructor(ctor, params);
+            try {
+                return ReflectionUtils.invokeConstructor(ctor, params);
+            } catch (AssertionError e) {
+                throw e;
+            } catch (Throwable t) {
+                if (niceErrors) {
+                    throw ReflectionUtils.getNiceException(t, ctor.getDeclaringClass().getSimpleName(), params, customErrorMsg);
+                } else {
+                    throw t;
+                }
+            }
         }
         
         private Object invokeMethod(Object... params) throws Throwable {
@@ -569,7 +599,17 @@ public class Reflex {
                 throw new NullPointerException("Trying to invoke a method without a this parameter. Provide a this parameter or use invokeOn.");
             }
             
-            return ReflectionUtils.invokeMethod(method.returnType, getMethod(), self, params);
+            try {
+                return ReflectionUtils.invokeMethod(method.returnType, getMethod(), self, params);
+            } catch (AssertionError e) {
+                throw e;
+            } catch (Throwable t) {
+                if (niceErrors) {
+                    throw ReflectionUtils.getNiceException(t, this.getMethod().getName(), params, customErrorMsg);
+                } else {
+                    throw t;
+                }
+            }
         }
         
         private void requireExists(Integer expectedAccess) throws AssertionError {
@@ -607,9 +647,74 @@ public class Reflex {
                 return null;
             }
         }
+        
+        /**
+         * Returns a copy of this method reference.
+         */
+        @Override
+        public Me clone() {
+            int arity = this.paramTypes.length;
+            Class<?>[] ctorParamTypes = new Class<?>[1 + arity];
+            Object[] ctorParams = new Object[1 + arity];
+            ctorParamTypes[0] = MethodAndReturnType.class;
+            ctorParams[0] = this.method;
+            for (int i = 1; i < 1 + arity; ++i) {
+                ctorParamTypes[i] = Class.class;
+                ctorParams[i] = this.paramTypes[i - 1];
+            }
+            Constructor<?> ctor;
+            try {
+                ctor = this.getClass().getDeclaredConstructor(ctorParamTypes);
+            } catch (Exception ex) {
+                throw new RuntimeException("Bug in Reflex.MethodRef.clone()", ex);
+            }
+            try {
+                Me result = (Me)ctor.newInstance(ctorParams);
+                result.niceErrors = this.niceErrors;
+                result.customErrorMsg = this.customErrorMsg;
+                return result;
+            } catch (Exception ex) {
+                throw new RuntimeException("Bug in Reflex.MethodRef.clone()", ex);
+            }
+        }
+        
+        /**
+         * Returns a new MethodRef that wraps exceptions thrown by the method.
+         * 
+         * <p>
+         * Any non-AssertionError exception thrown by the invoked method is replaced
+         * with a new AssertionError whose message looks roughly like this:
+         * {@link "ExceptionType: exception msg, in call someMethod(arg1, arg2, ...). Custom msg (if any)."}.
+         * The message is subject to localization.
+         * 
+         * <p>
+         * The new exception gets the same stack trace and cause as the original exception.
+         * 
+         * <p>
+         * Based on #{@link ReflectionUtils#getNiceException(java.lang.Throwable, java.lang.String, java.lang.Object[], java.lang.String)}.
+         * 
+         * @param customMsg A message to add to the exception. May be null.
+         * @return A new MethodRef the same as this one but with exception wrapping
+         */
+        public Me withNiceError(String customMsg) {
+            Me that = clone();
+            that.niceErrors = true;
+            that.customErrorMsg = customMsg;
+            return that;
+        }
+        
+        /**
+         * An overload of #{@link #withNiceError(java.lang.String)} with no customMsg.
+         * 
+         * <p>
+         * Equivalent to {@code withNiceError(null)}.
+         */
+        public Me withNiceError() {
+            return withNiceError(null);
+        }
     }
     
-    public static class MethodRef0<S, R> extends MethodRef<S, R> {
+    public static class MethodRef0<S, R> extends MethodRef<MethodRef0<S, R>, S, R> {
         MethodRef0(MethodAndReturnType<S, R> m) {
             super(m);
         }
@@ -632,7 +737,7 @@ public class Reflex {
         }
     }
     
-    public static class MethodRef1<S, R, P1> extends MethodRef<S, R> {
+    public static class MethodRef1<S, R, P1> extends MethodRef<MethodRef1<S, R, P1>, S, R> {
         MethodRef1(MethodAndReturnType<S, R> m, Class<P1> p1Type) {
             super(m, p1Type);
         }
@@ -655,7 +760,7 @@ public class Reflex {
         }
     }
     
-    public static class MethodRef2<S, R, P1, P2> extends MethodRef<S, R> {
+    public static class MethodRef2<S, R, P1, P2> extends MethodRef<MethodRef2<S, R, P1, P2>, S, R> {
         MethodRef2(MethodAndReturnType<S, R> m, Class<P1> p1Type, Class<P2> p2Type) {
             super(m, p1Type, p2Type);
         }
@@ -678,7 +783,7 @@ public class Reflex {
         }
     }
     
-    public static class MethodRef3<S, R, P1, P2, P3> extends MethodRef<S, R> {
+    public static class MethodRef3<S, R, P1, P2, P3> extends MethodRef<MethodRef3<S, R, P1, P2, P3>, S, R> {
         MethodRef3(MethodAndReturnType<S, R> m, Class<P1> p1Type, Class<P2> p2Type, Class<P3> p3Type) {
             super(m, p1Type, p2Type, p3Type);
         }
@@ -701,7 +806,7 @@ public class Reflex {
         }
     }
     
-    public static class MethodRef4<S, R, P1, P2, P3, P4> extends MethodRef<S, R> {
+    public static class MethodRef4<S, R, P1, P2, P3, P4> extends MethodRef<MethodRef4<S, R, P1, P2, P3, P4>, S, R> {
         MethodRef4(MethodAndReturnType<S, R> m, Class<P1> p1Type, Class<P2> p2Type, Class<P3> p3Type, Class<P4> p4Type) {
             super(m, p1Type, p2Type, p3Type, p4Type);
         }
@@ -718,7 +823,7 @@ public class Reflex {
         }
     }
     
-    public static class MethodRef5<S, R, P1, P2, P3, P4, P5> extends MethodRef<S, R> {
+    public static class MethodRef5<S, R, P1, P2, P3, P4, P5> extends MethodRef<MethodRef5<S, R, P1, P2, P3, P4, P5>, S, R> {
         MethodRef5(MethodAndReturnType<S, R> m, Class<P1> p1Type, Class<P2> p2Type, Class<P3> p3Type, Class<P4> p4Type, Class<P5> p5Type) {
             super(m, p1Type, p2Type, p3Type, p4Type, p5Type);
         }

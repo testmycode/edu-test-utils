@@ -524,7 +524,99 @@ public class ReflectionUtils {
             throw ex.getCause();
         }
     }
-
+    
+    /**
+     * Creates an AssertionError with a helpful error message describing the original exception.
+     * 
+     * <p>
+     * The new exception's error message looks roughly like this:
+     * {@link "ExceptionType: exception msg, in call someMethod(arg1, arg2, ...). Custom msg (if any)."}
+     * The message is subject to localization.
+     * 
+     * <p>
+     * The new exception gets the same stack trace and cause as the original exception.
+     * 
+     * @param origEx The original exception.
+     * @param methodName The name of the method that was called.
+     * @param params The parameters that were given.
+     * @param customMsg An optional extra message to add to the error.
+     * @return A new exception with the same class and stack trace but a different 
+     */
+    public static AssertionError getNiceException(Throwable origEx, String methodName, Object[] params, String customMsg) {
+        String origExAndMsg;
+        if (origEx.getMessage() == null) {
+            origExAndMsg = origEx.getClass().getSimpleName();
+        } else {
+            origExAndMsg = origEx.getClass().getSimpleName() + ": " + stripPunctuation(origEx.getMessage());
+        }
+        String callDesc = describeMethodCall(methodName, params);
+        
+        String newMsg;
+        if (customMsg != null && !customMsg.isEmpty()) {
+            newMsg = tr("exception_with_custom_msg",
+                    origExAndMsg,
+                    callDesc,
+                    customMsg);
+        } else {
+            newMsg = tr("exception_without_custom_msg",
+                    origExAndMsg,
+                    callDesc);
+        }
+        
+        AssertionError newEx = new AssertionError(newMsg);
+        newEx.setStackTrace(origEx.getStackTrace());
+        newEx.initCause(origEx.getCause());
+        return newEx;
+    }
+    
+    private static String describeMethodCall(String methodName, Object[] params) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(methodName);
+        sb.append("(");
+        for (int i = 0; i < params.length - 1; ++i) {
+            sb.append(describeArg(params[i])).append(", ");
+        }
+        if (params.length > 0) {
+            sb.append(describeArg(params[params.length - 1]));
+        }
+        sb.append(")");
+        return sb.toString();
+    }
+    
+    private static String describeArg(Object arg) {
+        int maxLength = 50;
+        String result;
+        try {
+            result = arg.toString();
+        } catch (Exception ex) {
+            result = "<error in .toString() of arg>"; // TODO: localize
+        }
+        
+        if (result.length() > maxLength) {
+            result = result.substring(0, maxLength) + "...";
+        }
+        
+        if (arg instanceof String) {
+            result = '"' + result + '"';
+        }
+        
+        return result;
+    }
+    
+    private static String stripPunctuation(String s) {
+        s = s.trim();
+        if (s.isEmpty()) {
+            return s;
+        }
+        
+        char lastChar = s.charAt(s.length() - 1);
+        if (lastChar == '.' || lastChar == '!' || lastChar == '?') {
+            return s.substring(0, s.length() - 1);
+        } else {
+            return s;
+        }
+    }
+    
     /**
      * Converts a class object representing a primitive type like
      * {@code Integer.TYPE} to the corresponding object type like

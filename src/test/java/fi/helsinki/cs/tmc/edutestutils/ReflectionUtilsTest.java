@@ -4,8 +4,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import org.junit.After;
-import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class ReflectionUtilsTest {
     
@@ -243,6 +243,70 @@ public class ReflectionUtilsTest {
     public void requireClassAccessDoesntDoesntThrowIfTheClassAccessModifierMatches() {
         Class<?> cls = ReflectionUtils.findClass("fi.helsinki.cs.tmc.edutestutils.testpkg.PkgPrivateClass");
         ReflectionUtils.requireClassAccess(cls, ReflectionUtils.PACKAGE_PRIVATE);
+    }
+    
+    @Test
+    public void messageOfNiceExceptionWithCustomMsg() {
+        Exception origEx = new IllegalStateException("bad stuff happened");
+        String msg = ReflectionUtils.getNiceException(origEx, "theMethod", new Object[] {1, "two"}, "How sad.").getMessage();
+        assertEquals("IllegalStateException: bad stuff happened, in call theMethod(1, \"two\"). How sad.", msg);
+    }
+    
+    @Test
+    public void messageOfNiceExceptionWithoutCustomMsg() {
+        Exception origEx = new IllegalStateException("bad stuff happened");
+        String msg = ReflectionUtils.getNiceException(origEx, "theMethod", new Object[] {1, "two"}, null).getMessage();
+        assertEquals("IllegalStateException: bad stuff happened, in call theMethod(1, \"two\").", msg);
+    }
+    
+    @Test
+    public void messageOfNiceExceptionWithNullOriginalMsg() {
+        Exception origEx = new IllegalStateException();
+        assertNull(origEx.getMessage());
+        String msg = ReflectionUtils.getNiceException(origEx, "theMethod", new Object[] {1, "two"}, null).getMessage();
+        assertEquals("IllegalStateException, in call theMethod(1, \"two\").", msg);
+    }
+    
+    @Test
+    public void messageOfNiceExceptionWithZeroArgs() {
+        Exception origEx = new IllegalStateException("bad stuff happened");
+        String msg = ReflectionUtils.getNiceException(origEx, "theMethod", new Object[] {}, null).getMessage();
+        assertEquals("IllegalStateException: bad stuff happened, in call theMethod().", msg);
+    }
+    
+    @Test
+    public void messageOfNiceExceptionWithLongArguments() {
+        Exception origEx = new IllegalStateException("bad stuff happened");
+        String ooo = "oooooooooo"; // 10
+        Object[] args = new Object[] {
+            123,
+            "trolololoooo" + ooo + ooo + ooo + ooo + ooo + ooo + ooo + ooo + ooo,
+            456
+        };
+        String msg = ReflectionUtils.getNiceException(origEx, "theMethod", args, "That's it.").getMessage();
+        assertTrue(msg.contains("in call theMethod(123, \"trolololoooooooo"));
+        assertTrue(msg.contains("ooooooooo...\", 456). That's it."));
+    }
+    
+    @Test
+    public void causeOfNiceException() {
+        Exception cause = new IllegalArgumentException("trololo");
+        Exception origEx = new IllegalStateException("bad stuff happened", cause);
+        assertSame(cause, ReflectionUtils.getNiceException(origEx, "theMethod", new Object[] {1, "two"}, "How sad.").getCause());
+    }
+    
+    @Test
+    public void stackTraceOfNiceException() {
+        try {
+            throwAnException();
+        } catch (Exception origEx) {
+            AssertionError e = ReflectionUtils.getNiceException(origEx, "throwAnException", new Object[0], "trol");
+            assertEquals("throwAnException", e.getStackTrace()[0].getMethodName());
+        }
+    }
+    
+    private void throwAnException() throws Exception {
+        throw new Exception("foo");
     }
 
     @Test

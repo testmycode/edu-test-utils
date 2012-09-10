@@ -1,12 +1,12 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
-import fi.helsinki.cs.tmc.edutestutils.Reflex.MethodRef1;
-import fi.helsinki.cs.tmc.edutestutils.Reflex.MethodRef0;
 import fi.helsinki.cs.tmc.edutestutils.Reflex.ClassRef;
+import fi.helsinki.cs.tmc.edutestutils.Reflex.MethodRef0;
+import fi.helsinki.cs.tmc.edutestutils.Reflex.MethodRef1;
 import java.util.Locale;
 import org.junit.After;
-import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class ReflexTest {
     
@@ -266,6 +266,38 @@ public class ReflexTest {
             }
         }
         new TestCase().run();
+    }
+    
+    @Test
+    public void niceErrorsFromConstructors() throws Throwable {
+        try {
+            Reflex.reflect(TestSubject.class)
+                    .constructor()
+                    .taking(String.class)
+                    .withNiceError("Too bad.")
+                    .invoke("hi");
+        } catch (AssertionError ex) {
+            assertEquals("IllegalStateException, in call TestSubject(\"hi\"). Too bad.", ex.getMessage());
+            return;
+        }
+        fail("Exception expected");
+    }
+    
+    @Test
+    public void niceErrorsFromMethods() throws Throwable {
+        try {
+            TestSubject ts = new TestSubject();
+            Reflex.reflect(TestSubject.class)
+                    .method(ts, "throwISE")
+                    .returningVoid()
+                    .takingNoParams()
+                    .withNiceError("So sad.")
+                    .invoke();
+        } catch (AssertionError ex) {
+            assertEquals("IllegalStateException, in call throwISE(). So sad.", ex.getMessage());
+            return;
+        }
+        fail("Exception expected");
     }
     
     @Test
