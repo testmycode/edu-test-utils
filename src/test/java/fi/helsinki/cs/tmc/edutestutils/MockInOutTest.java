@@ -15,8 +15,9 @@ public class MockInOutTest {
         assertFalse(System.in==in);
         System.out.println("hello");
         System.out.println("moi\r\nmoi");
+        System.out.println("mää\nmöö");
         
-        assertEquals("hello\nmoi\nmoi\n",mio.getOutput());
+        assertEquals("hello\nmoi\nmoi\nmää\nmöö\n", mio.getOutput());
 
         Scanner s = new Scanner(System.in);
 
