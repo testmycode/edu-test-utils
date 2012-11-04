@@ -1,13 +1,14 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
-import java.util.Scanner;
-import org.junit.Test;
-import static org.junit.Assert.*;
 import java.util.NoSuchElementException;
+import java.util.Scanner;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 public class MockInOutTest {
 
-    @Test public void test() {
+    @Test
+    public void test() {
         Object out = System.out;
         Object in = System.in;
         MockInOut mio = new MockInOut("1\nXYZ\n");
@@ -34,6 +35,14 @@ public class MockInOutTest {
 
         assertTrue(System.out==out);
         assertTrue(System.in==in);
+    }
+    
+    @Test
+    public void testNoUnflushedOutputProblemsWhenNoNewline() {
+        MockInOut mio = new MockInOut("");
+        System.out.append("x");
+        assertEquals("x", mio.getOutput());
+        mio.close();
     }
 
 }

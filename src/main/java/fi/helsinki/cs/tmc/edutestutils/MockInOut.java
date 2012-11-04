@@ -11,7 +11,7 @@ import java.nio.charset.Charset;
  * A simple class for capturing {@code System.out} and injecting
  * {@code System.in}.
  *
- * <p> Usage:</p>
+ * <p>Usage:</p>
  *
  * <code>
  * public void myTest() {<br>
@@ -37,7 +37,7 @@ public class MockInOut {
     private InputStream irig;
     private ByteArrayOutputStream os;
     private ByteArrayInputStream is;
-    private static Charset charset;
+    private final static Charset charset;
     
     static {
         if (Charset.availableCharsets().containsKey("UTF-8")) {
