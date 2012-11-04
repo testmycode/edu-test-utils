@@ -1,13 +1,11 @@
 package fi.helsinki.cs.tmc.edutestutils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A simple class for capturing {@code System.out} and injecting
@@ -40,14 +38,16 @@ public class MockInOut {
     private ByteArrayOutputStream os;
     private ByteArrayInputStream is;
     private static Charset charset;
-
-    public MockInOut(String input) {
+    
+    static {
         if (Charset.availableCharsets().containsKey("UTF-8")) {
             charset = Charset.forName("UTF-8");
         } else {
             charset = Charset.defaultCharset();
         }
-        
+    }
+
+    public MockInOut(String input) {
         orig = System.out;
         irig = System.in;
 
@@ -55,8 +55,7 @@ public class MockInOut {
         try {
             System.setOut(new PrintStream(os, false, charset.name()));
         } catch (UnsupportedEncodingException ex) {
-            // If fails use PrintStream without encoding
-            System.setOut(new PrintStream(os));
+            throw new RuntimeException(ex);
         }
 
         is = new ByteArrayInputStream(input.getBytes());
@@ -79,8 +78,7 @@ public class MockInOut {
             try {
                 return os.toString(charset.name()).replace("\r\n", "\n");
             } catch (UnsupportedEncodingException ex) {
-                // If fails return ignoring encoding
-                return os.toString().replace("\r\n", "\n");
+                throw new RuntimeException(ex);
             }
         } else {
             throw new Error("getOutput on closed MockInOut!");
