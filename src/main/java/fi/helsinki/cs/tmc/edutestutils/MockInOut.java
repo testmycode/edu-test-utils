@@ -4,12 +4,16 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * A simple class for capturing {@code System.out} and injecting {@code System.in}.
+ * A simple class for capturing {@code System.out} and injecting
+ * {@code System.in}.
  *
- * <p>
- * Usage:</p>
+ * <p> Usage:</p>
  *
  * <code>
  * public void myTest() {<br>
@@ -23,9 +27,10 @@ import java.io.ByteArrayInputStream;
  * &nbsp;&nbsp;&nbsp;&nbsp;// Check that the output is correct<br>
  * }<br>
  * </code>
- * 
- * This class automatically converts line endings in stdout to unix format (only \n).
- * 
+ *
+ * This class automatically converts line endings in stdout to unix format (only
+ * \n).
+ *
  * @see MockStdio
  */
 public class MockInOut {
@@ -34,33 +39,57 @@ public class MockInOut {
     private InputStream irig;
     private ByteArrayOutputStream os;
     private ByteArrayInputStream is;
+    private static Charset charset;
 
     public MockInOut(String input) {
+        if (Charset.availableCharsets().containsKey("UTF-8")) {
+            charset = Charset.forName("UTF-8");
+        } else {
+            charset = Charset.defaultCharset();
+        }
+        
         orig = System.out;
         irig = System.in;
 
         os = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(os));
+        try {
+            System.setOut(new PrintStream(os, false, charset.name()));
+        } catch (UnsupportedEncodingException ex) {
+            // If fails use PrintStream without encoding
+            System.setOut(new PrintStream(os));
+        }
 
         is = new ByteArrayInputStream(input.getBytes());
         System.setIn(is);
     }
 
-    /** You can use this if you want to check how much of the input was read. */
+    /**
+     * You can use this if you want to check how much of the input was read.
+     */
     public ByteArrayInputStream getInputStream() {
         return is;
     }
 
-    /** Returns everything written to System.out since this {@code MockInOut}
-     * was constructed. Can't be called on a closed {@code MockInOut} */
+    /**
+     * Returns everything written to System.out since this {@code MockInOut} was
+     * constructed. Can't be called on a closed {@code MockInOut}
+     */
     public String getOutput() {
-        if (os != null)
-            return os.toString().replace("\r\n", "\n");
-        else
+        if (os != null) {
+            try {
+                return os.toString(charset.name()).replace("\r\n", "\n");
+            } catch (UnsupportedEncodingException ex) {
+                // If fails return ignoring encoding
+                return os.toString().replace("\r\n", "\n");
+            }
+        } else {
             throw new Error("getOutput on closed MockInOut!");
+        }
     }
 
-    /** Restores System.in and System.out */
+    /**
+     * Restores System.in and System.out
+     */
     public void close() {
         os = null;
         is = null;
@@ -68,4 +97,3 @@ public class MockInOut {
         System.setIn(irig);
     }
 }
-
