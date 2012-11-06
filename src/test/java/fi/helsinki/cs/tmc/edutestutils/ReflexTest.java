@@ -6,6 +6,7 @@ import fi.helsinki.cs.tmc.edutestutils.Reflex.MethodRef1;
 import java.util.Locale;
 import org.junit.After;
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.junit.Test;
 
 public class ReflexTest {
@@ -55,6 +56,11 @@ public class ReflexTest {
         }
         public void takeSelf(TestSubject ts) {
         }
+    }
+    
+    @Before
+    public void setLocaleToRoot() {
+        EduTestUtilsDefaultLocale.set(Locale.ROOT);
     }
     
     @After

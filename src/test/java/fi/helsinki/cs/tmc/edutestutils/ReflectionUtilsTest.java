@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 import org.junit.After;
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.junit.Test;
 
 public class ReflectionUtilsTest {
@@ -49,6 +50,11 @@ public class ReflectionUtilsTest {
         int packagePrivateMethod() {
             return 42;
         }
+    }
+    
+    @Before
+    public void setLocaleToRoot() {
+        EduTestUtilsDefaultLocale.set(Locale.ROOT);
     }
     
     @After
