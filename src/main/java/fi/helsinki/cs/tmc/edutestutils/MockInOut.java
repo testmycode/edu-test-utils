@@ -37,9 +37,11 @@ public class MockInOut {
     private InputStream irig;
     private ByteArrayOutputStream os;
     private ByteArrayInputStream is;
-    private final static Charset charset;
     
+    private final static Charset charset;
     static {
+        // Our source and tests files are UTF-8, so we assert against UTF-8 strings
+        // and don't want MockInOut to convert to the native charset.
         if (Charset.availableCharsets().containsKey("UTF-8")) {
             charset = Charset.forName("UTF-8");
         } else {

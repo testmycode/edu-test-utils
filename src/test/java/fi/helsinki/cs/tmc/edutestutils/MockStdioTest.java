@@ -48,4 +48,12 @@ public class MockStdioTest {
         assertEquals("hello\nworld\n", io.getSysOut());
         assertEquals("world\nhello\n", io.getSysErr());
     }
+    
+    @Test
+    public void testNonAsciiCharacters() {
+        System.out.println("Hähä");
+        System.err.println("Höhö");
+        assertEquals("Hähä\n", io.getSysOut());
+        assertEquals("Höhö\n", io.getSysErr());
+    }
 }

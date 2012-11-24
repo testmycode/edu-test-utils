@@ -70,7 +70,16 @@ public class MockStdio implements TestRule {
 
     private static boolean initialized = false;
     
-    private static final Charset charset = Charset.defaultCharset();
+    private static final Charset charset;
+    static {
+        // Our source and tests files are UTF-8, so we assert against UTF-8 strings
+        // and don't want MockInOut to convert to the native charset.
+        if (Charset.availableCharsets().containsKey("UTF-8")) {
+            charset = Charset.forName("UTF-8");
+        } else {
+            charset = Charset.defaultCharset();
+        }
+    }
     
     private static final InputStream realIn = System.in;
     private static final OutputStream realOut = System.out;
@@ -109,8 +118,12 @@ public class MockStdio implements TestRule {
         resetMockOutAndErr();
         
         System.setIn(switchIn);
-        System.setOut(new PrintStream(switchOut, true));
-        System.setErr(new PrintStream(switchErr, true));
+        try {
+            System.setOut(new PrintStream(switchOut, true, charset.name()));
+            System.setErr(new PrintStream(switchErr, true, charset.name()));
+        } catch (UnsupportedEncodingException ex) {
+            throw new Error(ex);
+        }
         
         initialized = true;
     }
