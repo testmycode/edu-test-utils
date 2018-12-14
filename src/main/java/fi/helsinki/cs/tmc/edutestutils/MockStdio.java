@@ -16,12 +16,12 @@ import org.junit.runners.model.Statement;
 
 /**
  * JUnit rule that captures output from {@code System.out} and {@code System.err} and feeds input to {@code System.in}.
- * 
+ *
  * <p>
  * Redirects {@link System#in}, {@link System#out} and {@link System#err}
  * to buffers before each test and resets them after the test.
  * Use it like this
- * 
+ *
  * <p>
  * <code>
  * import org.junit.Rule;<br>
@@ -33,12 +33,12 @@ import org.junit.runners.model.Statement;
  * &nbsp;&nbsp;&nbsp;&nbsp;// ...<br>
  * }
  * </code>
- * 
+ *
  * <p>This class automatically converts line endings in stdout and stderr to
  * unix format (only <tt>\n</tt>).
- * 
+ *
  * <h2>Important notes about initialization order</h2>
- * 
+ *
  * <p>
  * It's common for student code to have a {@link Scanner} object with
  * a reference to {@link System#in} in a <b>static</b> variable.
@@ -47,7 +47,7 @@ import org.junit.runners.model.Statement;
  * before this rule gets a chance to change {@link System#in},
  * then the scanner will read from the original input stream
  * instead of the mock.
- * 
+ *
  * <p>
  * If MockStdio used by <b>all</b> test classes
  * (critically, by the first test class to be run), then this is not a problem,
@@ -58,42 +58,38 @@ import org.junit.runners.model.Statement;
  * {@link ReflectionUtils#newInstanceOfClass(java.lang.String)}
  * to get a new instance of the student code in order to make it point to
  * the changed {@link System#in}.
- * 
+ *
  * <p>
  * MockStdio has been known to cause problems on some JVMs
  * when used with PowerMock. The simpler {@link MockInOut} may be helpful in
  * those cases.
- * 
+ *
  * @see MockInOut
  */
 public class MockStdio implements TestRule {
 
     private static boolean initialized = false;
-    
-    private static final Charset charset;
-    static {
-        // Our source and tests files are UTF-8, so we assert against UTF-8 strings
-        // and don't want MockInOut to convert to the native charset.
-        if (Charset.availableCharsets().containsKey("UTF-8")) {
-            charset = Charset.forName("UTF-8");
-        } else {
-            charset = Charset.defaultCharset();
-        }
-    }
-    
+
+    // We want to use the platforms default encoding because the underlying
+    // imlpementations of stdout and stdin in java are always encoded
+    // with it and we cannot force them to some arbitary encoding.
+    // Converting between the encodings is no problem since java's
+    // strings handle it for us
+    private static final Charset charset = Charset.defaultCharset();
+
     private static final InputStream realIn = System.in;
     private static final OutputStream realOut = System.out;
     private static final OutputStream realErr = System.err;
-    
+
     private static final SwitchableInputStream switchIn = new SwitchableInputStream(realIn);
     private static final SwitchableOutputStream switchOut = new SwitchableOutputStream(realOut);
     private static final SwitchableOutputStream switchErr = new SwitchableOutputStream(realErr);
-    
+
     private InputStream mockIn;
     private ByteArrayOutputStream mockOut;
     private ByteArrayOutputStream mockErr;
     private boolean enabled;
-    
+
     @Override
     public Statement apply(final Statement stmnt, Description d) {
         return new Statement() {
@@ -112,11 +108,11 @@ public class MockStdio implements TestRule {
             }
         };
     }
-    
+
     private void initialize() {
         resetMockIn();
         resetMockOutAndErr();
-        
+
         System.setIn(switchIn);
         try {
             System.setOut(new PrintStream(switchOut, true, charset.name()));
@@ -124,19 +120,19 @@ public class MockStdio implements TestRule {
         } catch (UnsupportedEncodingException ex) {
             throw new Error(ex);
         }
-        
+
         initialized = true;
     }
-    
+
     private void resetMockIn() {
         mockIn = new ByteArrayInputStream(new byte[0]);
     }
-    
+
     private void resetMockOutAndErr() {
         mockOut = new ByteArrayOutputStream();
         mockErr = new ByteArrayOutputStream();
     }
-    
+
     /**
      * Sets what {@link System#in} receives during this test.
      */
@@ -146,7 +142,7 @@ public class MockStdio implements TestRule {
             switchIn.setUnderlying(mockIn);
         }
     }
-    
+
     /**
      * Returns what was printed to {@link System#out} during this test.
      */
@@ -157,7 +153,7 @@ public class MockStdio implements TestRule {
             throw new RuntimeException(ex);
         }
     }
-    
+
     /**
      * Returns what was printed to {@link System#err} during this test.
      */
@@ -168,10 +164,10 @@ public class MockStdio implements TestRule {
             throw new RuntimeException(ex);
         }
     }
-    
+
     /**
      * Redirects I/O to/from buffers.
-     * 
+     *
      * <p>
      * If your use MockStdio as a JUnit rule, there is no need to call
      * this directly.
@@ -180,41 +176,41 @@ public class MockStdio implements TestRule {
         if (!initialized) {
             initialize();
         }
-        
+
         resetMockOutAndErr();
-        
+
         switchIn.setUnderlying(mockIn);
         switchOut.setUnderlying(mockOut);
         switchErr.setUnderlying(mockErr);
-        
+
         enabled = true;
     }
-    
+
     /**
      * Tells whether I/O is directed to/from the mock buffers.
-     * 
+     *
      * <p>
      * Should be true in all tests with this JUnit rule.
      */
     public boolean isEnabled() {
         return enabled;
     }
-    
+
     /**
      * Redirects I/O to/from the original streams.
-     * 
+     *
      * <p>
      * If your use MockStdio as a JUnit rule, there is no need to call
      * this directly.
      */
     public void disable() {
         enabled = false;
-        
+
         switchIn.setUnderlying(realIn);
         switchOut.setUnderlying(realOut);
         switchErr.setUnderlying(realErr);
-        
+
         resetMockIn();
     }
-    
+
 }
